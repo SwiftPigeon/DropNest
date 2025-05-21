@@ -18,6 +18,8 @@ const { Step } = Steps;
 
 const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
+const GOOGLE_MAP_LIBRARIES = ["places"];
+
 // the initial location when rendering the Google Map for the first time,
 // until the user clicks on the map
 const center = {
@@ -63,7 +65,7 @@ function getRecentAddresses(key) {
   return JSON.parse(localStorage.getItem(key) || "[]");
 }
 
-export default function DeliveryPage({ user, setAuthVisible }) {
+export default function DeliveryPage({ user, setUser, setAuthVisible }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [pickupAddress, setPickupAddress] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
@@ -86,7 +88,7 @@ export default function DeliveryPage({ user, setAuthVisible }) {
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_API_KEY,
-    libraries: ["places"],
+    libraries: GOOGLE_MAP_LIBRARIES,
   });
 
   // geocode the selected address, update coordinates and map center, also store the
@@ -144,7 +146,11 @@ export default function DeliveryPage({ user, setAuthVisible }) {
 
   return (
     <Layout className="bg-white">
-      <AppHeader user={user} setAuthVisible={setAuthVisible} />
+      <AppHeader
+        user={user}
+        setUser={setUser}
+        setAuthVisible={setAuthVisible}
+      />
       <Content
         className="mt-[85px] px-6 pb-4"
         style={{ height: "calc(100vh - 85px)", overflow: "hidden" }}

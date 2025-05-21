@@ -1,11 +1,16 @@
-import { Form, Input, Checkbox, Button } from "antd";
+import { Form, Input, Checkbox, Button, message } from "antd";
 import { storeTokens } from "../service/AuthService";
+import { useState } from "react";
 
-export function LoginForm({ onSuccess, loading }) {
+export function LoginForm({ onSuccess }) {
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async (data) => {
     const { email, password, remember } = data;
 
     try {
+      // set loading state
+      setLoading(true);
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -30,7 +35,9 @@ export function LoginForm({ onSuccess, loading }) {
         id: info.user.id,
       });
     } catch (error) {
-      console.error("Login failed: ", error);
+      message.error("Login failed: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 

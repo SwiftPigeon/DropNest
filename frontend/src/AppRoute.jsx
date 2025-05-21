@@ -6,7 +6,10 @@ export default function AppRoute({ user, setUser }) {
   return (
     <Routes>
       <Route path="/" element={<HomePage user={user} setUser={setUser} />} />
-      <Route path="/createDelivery" element={<DeliveryPage user={user} />} />
+      <Route
+        path="/createDelivery"
+        element={<DeliveryPage user={user} setUser={setUser} />}
+      />
     </Routes>
   );
 }

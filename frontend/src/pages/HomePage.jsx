@@ -9,6 +9,7 @@ import {
 } from "@ant-design/icons";
 import AuthForm from "../components/AuthForm";
 import AppHeader from "../components/Header";
+import { useNavigate } from "react-router-dom";
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;
@@ -17,13 +18,30 @@ export default function HomePage({ user, setUser }) {
   // control the visible of the modal
   const [authVisible, setAuthVisible] = useState(false);
 
+  const navigate = useNavigate();
+
   const handleCancel = () => {
     setAuthVisible(false);
   };
 
+  const handleDeliveryClick = () => {
+    if (!user) {
+      // if not login
+      sessionStorage.setItem("redirectAfterLogin", "/create-delivery");
+      setAuthVisible(true);
+    } else {
+      // if login
+      navigate("/createDelivery");
+    }
+  };
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <AppHeader user={user} setAuthVisible={setAuthVisible} />
+      <AppHeader
+        user={user}
+        setUser={setUser}
+        setAuthVisible={setAuthVisible}
+      />
 
       <div
         className="fixed left-1/2 top-[20%] transform -translate-x-1/2 z-50 bg-black/25 p-14 rounded-xl text-center text-teal-300 shadow-lg"
@@ -70,7 +88,6 @@ export default function HomePage({ user, setUser }) {
           and <strong>robots</strong>.
         </Paragraph>
 
-        {/* TODO: add the button onClick function based on the user state  */}
         <Button
           type="primary"
           size="large"
@@ -85,7 +102,7 @@ export default function HomePage({ user, setUser }) {
             fontWeight: 700,
             marginTop: 24,
           }}
-          onClick={() => {}}
+          onClick={handleDeliveryClick}
         >
           Try Delivery Now!
         </Button>
@@ -149,6 +166,10 @@ export default function HomePage({ user, setUser }) {
             onSuccess={(userData) => {
               setUser(userData);
               setAuthVisible(false);
+              const redirect =
+                sessionStorage.getItem("redirectAfterLogin") || "/";
+              sessionStorage.removeItem("redirectAfterLogin");
+              navigate(redirect);
             }}
           />
         </Modal>
