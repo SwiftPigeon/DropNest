@@ -1,17 +1,20 @@
-import { Form, Input, Button, Progress } from "antd";
+import { Form, Input, Button, Progress, message } from "antd";
 import { useState } from "react";
 import { CheckOutlined } from "@ant-design/icons";
 import { storeTokens } from "../service/AuthService";
 
-export function RegisterForm({ onSuccess, loading }) {
+export function RegisterForm({ onSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // handle register logic
   // TODO: Test with the backend API
   const handleRegister = async () => {
     try {
+      // set loading state
+      setLoading(true);
       // send request to the backend API
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -38,7 +41,9 @@ export function RegisterForm({ onSuccess, loading }) {
         email: data.user.email,
       });
     } catch (error) {
-      throw error;
+      message.error("Login failed: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 

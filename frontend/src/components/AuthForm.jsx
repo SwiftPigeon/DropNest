@@ -4,8 +4,6 @@ import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
 
 export default function AuthForm({ onSuccess }) {
-  // TODO: loading for button
-  const [loading, setLoading] = useState(false);
   //   const { form } = Form.useForm();
 
   return (
@@ -17,14 +15,14 @@ export default function AuthForm({ onSuccess }) {
         {
           key: "signin",
           label: <span style={{ fontSize: 18, fontWeight: 600 }}>Sign in</span>,
-          children: <LoginForm onSuccess={onSuccess} loading={loading} />,
+          children: <LoginForm onSuccess={onSuccess} />,
         },
         {
           key: "register",
           label: (
             <span style={{ fontSize: 18, fontWeight: 600 }}>Register</span>
           ),
-          children: <RegisterForm onSuccess={onSuccess} loading={loading} />,
+          children: <RegisterForm onSuccess={onSuccess} />,
         },
       ]}
     />
