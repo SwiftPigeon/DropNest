@@ -1,4 +1,4 @@
-package com.SwiftPigeon.backend.model;
+package com.swiftpigeon.backend.model;
 
 
 public class UserAlreadyExistException extends RuntimeException {
