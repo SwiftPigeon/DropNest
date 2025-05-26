@@ -1,4 +1,4 @@
-package com.laioffer.dropnest.model;
+package com.swiftpigeon.backend.models;
 
 public record RegisterRequest(
         String username,
