@@ -1,10 +1,10 @@
-package com.laioffer.staybooking.authentication;
+package com.swiftpigeon.backend.model;
 
 
-import com.laioffer.staybooking.model.UserEntity;
-import com.laioffer.staybooking.model.UserRole;
-import com.laioffer.staybooking.repository.UserRepository;
-import com.laioffer.staybooking.security.JwtHandler;
+import com.swiftpigeon.backend.model.UserEntity;
+import com.swiftpigeon.backend.model.UserRole;
+import com.swiftpigeon.backend.model.UserRepository;
+import com.swiftpigeon.backend.model.JwtHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
