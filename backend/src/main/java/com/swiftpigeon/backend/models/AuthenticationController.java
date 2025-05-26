@@ -1,9 +1,9 @@
-package com.laioffer.staybooking.authentication;
+package com.swiftpigeon.backend.model;
 
 
-import com.laioffer.staybooking.model.LoginRequest;
-import com.laioffer.staybooking.model.LoginResponse;
-import com.laioffer.staybooking.model.RegisterRequest;
+import com.swiftpigeon.backend.model.LoginRequest;
+import com.swiftpigeon.backend.model.LoginResponse;
+import com.swiftpigeon.backend.model.RegisterRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
