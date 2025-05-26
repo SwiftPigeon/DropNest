@@ -1,4 +1,4 @@
-package com.SwiftPigeon.backend.model;
+package com.swiftpigeon.backend.model;
 
 
 import com.SwiftPigeon.backend.model.UserEntity;
