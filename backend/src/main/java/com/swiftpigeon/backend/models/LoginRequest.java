@@ -1,5 +1,4 @@
-package com.laioffer.dropnest.model;
-
+package com.swiftpigeon.backend.models;
 public record LoginRequest(
         String username,
         String password
