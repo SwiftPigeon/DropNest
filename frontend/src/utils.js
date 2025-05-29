@@ -2,44 +2,58 @@ import axios from "axios";
 import { message } from "antd";
 
 // =================
-// 常量定义
+// 常量定义 / Constants Definition
 // =================
 
-// API 基础配置
+// API 基础配置 / API Base Configuration
 export const API_CONFIG = {
   BASE_URL: process.env.REACT_APP_API_URL || "http://localhost:8080",
   WEBSOCKET_URL: process.env.REACT_APP_WS_URL || "ws://localhost:8080",
   TIMEOUT: 10000,
 };
 
-// 订单状态
+// 订单状态 / Order Status
 export const ORDER_STATUS = {
-  PENDING_PAYMENT: "待支付",
-  PAID: "已支付",
-  PREPARING: "准备中",
-  PICKING_UP: "取件中",
-  PICKED_UP: "已取件",
-  DELIVERING: "配送中",
-  DELIVERED: "已送达",
-  COMPLETED: "已完成",
-  CANCELLED: "已取消",
-  FAILED: "配送失败",
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PAID: "PAID",
+  PREPARING: "PREPARING",
+  PICKING_UP: "PICKING_UP",
+  PICKED_UP: "PICKED_UP",
+  DELIVERING: "DELIVERING",
+  DELIVERED: "DELIVERED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  FAILED: "FAILED",
 };
 
-// 配送类型
+// 订单状态显示文本 / Order Status Display Text
+export const ORDER_STATUS_TEXT = {
+  PENDING_PAYMENT: "Pending Payment",
+  PAID: "Paid",
+  PREPARING: "Preparing",
+  PICKING_UP: "Picking Up",
+  PICKED_UP: "Picked Up",
+  DELIVERING: "Delivering",
+  DELIVERED: "Delivered",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  FAILED: "Failed",
+};
+
+// 配送类型 / Delivery Type
 export const DELIVERY_TYPE = {
   ROBOT: "ROBOT",
   DRONE: "DRONE",
 };
 
-// 配送速度
+// 配送速度 / Delivery Speed
 export const DELIVERY_SPEED = {
   BASIC: "BASIC",
   STANDARD: "STANDARD",
   EXPRESS: "EXPRESS",
 };
 
-// 支付方式
+// 支付方式 / Payment Method
 export const PAYMENT_METHOD = {
   CREDIT_CARD: "CREDIT_CARD",
   DEBIT_CARD: "DEBIT_CARD",
@@ -48,7 +62,7 @@ export const PAYMENT_METHOD = {
   GOOGLE_PAY: "GOOGLE_PAY",
 };
 
-// 通知类型
+// 通知类型 / Notification Type
 export const NOTIFICATION_TYPE = {
   ORDER_STATUS: "ORDER_STATUS",
   DELIVERY_COMPLETED: "DELIVERY_COMPLETED",
@@ -56,8 +70,37 @@ export const NOTIFICATION_TYPE = {
   SYSTEM: "SYSTEM",
 };
 
+// 地址标签 / Address Labels
+export const ADDRESS_LABEL = {
+  HOME: "Home",
+  OFFICE: "Office",
+  OTHER: "Other",
+};
+
+// 配送站信息 / Delivery Stations Info
+export const DELIVERY_STATIONS = {
+  STATION_1: {
+    id: "station-1",
+    name: "SkyHub Central",
+    latitude: 37.7749,
+    longitude: -122.4194,
+  },
+  STATION_2: {
+    id: "station-2",
+    name: "BayWing South",
+    latitude: 37.7599,
+    longitude: -122.4148,
+  },
+  STATION_3: {
+    id: "station-3",
+    name: "Marina Nest",
+    latitude: 37.802,
+    longitude: -122.443,
+  },
+};
+
 // =================
-// Axios 实例配置
+// Axios 实例配置 / Axios Instance Configuration
 // =================
 
 const apiClient = axios.create({
@@ -68,7 +111,7 @@ const apiClient = axios.create({
   },
 });
 
-// 请求拦截器 - 添加认证token
+// 请求拦截器 - 添加认证token / Request Interceptor - Add Auth Token
 apiClient.interceptors.request.use(
   (config) => {
     const token = getAuthToken();
@@ -82,20 +125,20 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器 - 处理错误
+// 响应拦截器 - 处理错误 / Response Interceptor - Handle Errors
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { response } = error;
 
     if (response?.status === 401) {
-      // Token过期，尝试刷新
+      // Token过期，尝试刷新 / Token expired, try to refresh
       const refreshToken = getRefreshToken();
       if (refreshToken) {
         try {
           const newToken = await refreshAuthToken();
           if (newToken) {
-            // 重新发送原请求
+            // 重新发送原请求 / Retry original request
             error.config.headers.Authorization = `Bearer ${newToken}`;
             return apiClient.request(error.config);
           }
@@ -109,8 +152,9 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // 显示错误消息
-    const errorMessage = response?.data?.message || error.message || "请求失败";
+    // 显示错误消息 / Show error message
+    const errorMessage =
+      response?.data?.message || error.message || "Request failed";
     message.error(errorMessage);
 
     return Promise.reject(error);
@@ -118,7 +162,7 @@ apiClient.interceptors.response.use(
 );
 
 // =================
-// 认证相关工具函数
+// 认证相关工具函数 / Authentication Utility Functions
 // =================
 
 export const getAuthToken = () => {
@@ -144,11 +188,11 @@ export const isAuthenticated = () => {
 };
 
 // =================
-// 认证API
+// 认证API / Authentication API
 // =================
 
 export const authAPI = {
-  // 用户注册
+  // 用户注册 / User Registration
   register: async (userData) => {
     const response = await apiClient.post("/api/auth/register", userData);
     if (response.data.token) {
@@ -157,7 +201,7 @@ export const authAPI = {
     return response.data;
   },
 
-  // 用户登录
+  // 用户登录 / User Login
   login: async (credentials) => {
     const response = await apiClient.post("/api/auth/login", credentials);
     if (response.data.token) {
@@ -166,7 +210,7 @@ export const authAPI = {
     return response.data;
   },
 
-  // 刷新token
+  // 刷新token / Refresh Token
   refreshToken: async () => {
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error("No refresh token");
@@ -181,7 +225,7 @@ export const authAPI = {
     return response.data.token;
   },
 
-  // 登出
+  // 登出 / Logout
   logout: async () => {
     try {
       await apiClient.post("/api/auth/logout");
@@ -191,7 +235,7 @@ export const authAPI = {
   },
 };
 
-// 刷新认证token的内部函数
+// 刷新认证token的内部函数 / Internal function to refresh auth token
 const refreshAuthToken = async () => {
   try {
     return await authAPI.refreshToken();
@@ -201,23 +245,23 @@ const refreshAuthToken = async () => {
 };
 
 // =================
-// 用户管理API
+// 用户管理API / User Management API
 // =================
 
 export const userAPI = {
-  // 获取用户资料
+  // 获取用户资料 / Get User Profile
   getProfile: async () => {
     const response = await apiClient.get("/api/users/profile");
     return response.data;
   },
 
-  // 更新用户资料
+  // 更新用户资料 / Update User Profile
   updateProfile: async (profileData) => {
     const response = await apiClient.put("/api/users/profile", profileData);
     return response.data;
   },
 
-  // 修改密码
+  // 修改密码 / Change Password
   changePassword: async (passwordData) => {
     const response = await apiClient.put("/api/users/password", passwordData);
     return response.data;
@@ -225,23 +269,23 @@ export const userAPI = {
 };
 
 // =================
-// 地址管理API
+// 地址管理API / Address Management API
 // =================
 
 export const addressAPI = {
-  // 获取地址列表
+  // 获取地址列表 / Get Address List
   getAddresses: async () => {
     const response = await apiClient.get("/api/addresses");
     return response.data;
   },
 
-  // 添加新地址
+  // 添加新地址 / Add New Address
   addAddress: async (addressData) => {
     const response = await apiClient.post("/api/addresses", addressData);
     return response.data;
   },
 
-  // 更新地址
+  // 更新地址 / Update Address
   updateAddress: async (addressId, addressData) => {
     const response = await apiClient.put(
       `/api/addresses/${addressId}`,
@@ -250,13 +294,13 @@ export const addressAPI = {
     return response.data;
   },
 
-  // 删除地址
+  // 删除地址 / Delete Address
   deleteAddress: async (addressId) => {
     const response = await apiClient.delete(`/api/addresses/${addressId}`);
     return response.data;
   },
 
-  // 设置默认地址
+  // 设置默认地址 / Set Default Address
   setDefaultAddress: async (addressId) => {
     const response = await apiClient.put(`/api/addresses/${addressId}/default`);
     return response.data;
@@ -264,35 +308,53 @@ export const addressAPI = {
 };
 
 // =================
-// 订单管理API
+// 配送站API / Delivery Stations API
+// =================
+
+export const stationAPI = {
+  // 获取所有配送站 / Get All Stations
+  getAllStations: async () => {
+    const response = await apiClient.get("/api/stations");
+    return response.data;
+  },
+
+  // 获取配送站详情 / Get Station Details
+  getStationDetails: async (stationId) => {
+    const response = await apiClient.get(`/api/stations/${stationId}`);
+    return response.data;
+  },
+};
+
+// =================
+// 订单管理API / Order Management API
 // =================
 
 export const orderAPI = {
-  // 计算订单价格
+  // 计算订单价格 / Calculate Order Price
   calculatePrice: async (orderData) => {
     const response = await apiClient.post("/api/orders/calculate", orderData);
     return response.data;
   },
 
-  // 创建订单
+  // 创建订单 / Create Order
   createOrder: async (orderData) => {
     const response = await apiClient.post("/api/orders", orderData);
     return response.data;
   },
 
-  // 获取订单列表
+  // 获取订单列表 / Get Order List
   getOrders: async (params = {}) => {
     const response = await apiClient.get("/api/orders", { params });
     return response.data;
   },
 
-  // 获取订单详情
+  // 获取订单详情 / Get Order Details
   getOrderDetails: async (orderId) => {
     const response = await apiClient.get(`/api/orders/${orderId}`);
     return response.data;
   },
 
-  // 取消订单
+  // 取消订单 / Cancel Order
   cancelOrder: async (orderId, reason) => {
     const response = await apiClient.put(`/api/orders/${orderId}/cancel`, {
       reason,
@@ -300,22 +362,22 @@ export const orderAPI = {
     return response.data;
   },
 
-  // 确认收货
-  confirmDelivery: async (orderId, signatureData) => {
+  // 确认收货 / Confirm Delivery
+  confirmDelivery: async (orderId, confirmationData) => {
     const response = await apiClient.put(
       `/api/orders/${orderId}/confirm`,
-      signatureData
+      confirmationData
     );
     return response.data;
   },
 };
 
 // =================
-// 实时跟踪API
+// 实时跟踪API / Real-time Tracking API
 // =================
 
 export const trackingAPI = {
-  // 获取当前跟踪信息
+  // 获取当前跟踪信息 / Get Current Tracking Info
   getCurrentTracking: async (orderId) => {
     const response = await apiClient.get(`/api/orders/${orderId}/tracking`);
     return response.data;
@@ -323,29 +385,32 @@ export const trackingAPI = {
 };
 
 // =================
-// 支付API
+// 支付API（简化版）/ Payment API (Simplified)
 // =================
 
 export const paymentAPI = {
-  // 创建支付
-  createPayment: async (paymentData) => {
-    const response = await apiClient.post("/api/payments/create", paymentData);
+  // 支付订单 / Pay Order
+  payOrder: async (orderId, paymentMethod) => {
+    const response = await apiClient.post("/api/payments/pay", {
+      orderId,
+      paymentMethod,
+    });
     return response.data;
   },
 
-  // 获取支付状态
-  getPaymentStatus: async (paymentId) => {
-    const response = await apiClient.get(`/api/payments/${paymentId}/status`);
+  // 获取支付历史 / Get Payment History
+  getPaymentHistory: async (params = {}) => {
+    const response = await apiClient.get("/api/payments/history", { params });
     return response.data;
   },
 };
 
 // =================
-// 评价API
+// 评价API（简化版）/ Review API (Simplified)
 // =================
 
 export const reviewAPI = {
-  // 提交评价
+  // 提交评价 / Submit Review
   submitReview: async (orderId, reviewData) => {
     const response = await apiClient.post(
       `/api/orders/${orderId}/review`,
@@ -354,7 +419,7 @@ export const reviewAPI = {
     return response.data;
   },
 
-  // 获取评价
+  // 获取评价 / Get Review
   getReview: async (orderId) => {
     const response = await apiClient.get(`/api/orders/${orderId}/review`);
     return response.data;
@@ -362,17 +427,17 @@ export const reviewAPI = {
 };
 
 // =================
-// 通知API
+// 通知API / Notification API
 // =================
 
 export const notificationAPI = {
-  // 获取通知列表
+  // 获取通知列表 / Get Notification List
   getNotifications: async (params = {}) => {
     const response = await apiClient.get("/api/notifications", { params });
     return response.data;
   },
 
-  // 标记为已读
+  // 标记为已读 / Mark as Read
   markAsRead: async (notificationId) => {
     const response = await apiClient.put(
       `/api/notifications/${notificationId}/read`
@@ -380,7 +445,7 @@ export const notificationAPI = {
     return response.data;
   },
 
-  // 获取未读数量
+  // 获取未读数量 / Get Unread Count
   getUnreadCount: async () => {
     const response = await apiClient.get("/api/notifications/unread-count");
     return response.data;
@@ -388,23 +453,23 @@ export const notificationAPI = {
 };
 
 // =================
-// 配置API
+// 配置API / Configuration API
 // =================
 
 export const configAPI = {
-  // 获取配送类型
+  // 获取配送类型 / Get Delivery Types
   getDeliveryTypes: async () => {
     const response = await apiClient.get("/api/config/delivery-types");
     return response.data;
   },
 
-  // 获取速度选项
+  // 获取速度选项 / Get Speed Options
   getSpeedOptions: async () => {
     const response = await apiClient.get("/api/config/speed-options");
     return response.data;
   },
 
-  // 获取禁止物品列表
+  // 获取禁止物品列表 / Get Prohibited Items List
   getProhibitedItems: async () => {
     const response = await apiClient.get("/api/config/prohibited-items");
     return response.data;
@@ -412,7 +477,7 @@ export const configAPI = {
 };
 
 // =================
-// WebSocket 管理
+// WebSocket 管理 / WebSocket Management
 // =================
 
 class TrackingWebSocket {
@@ -421,18 +486,19 @@ class TrackingWebSocket {
     this.listeners = new Map();
   }
 
+  // 连接WebSocket / Connect WebSocket
   connect(orderId) {
     const token = getAuthToken();
     if (!token) {
-      throw new Error("需要登录才能连接实时跟踪");
+      throw new Error("Authentication required for real-time tracking");
     }
 
     const wsUrl = `${API_CONFIG.WEBSOCKET_URL}/ws/tracking/${orderId}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log("WebSocket连接已建立");
-      // 发送认证信息
+      console.log("WebSocket connection established");
+      // 发送认证信息 / Send authentication info
       this.ws.send(
         JSON.stringify({
           type: "auth",
@@ -446,21 +512,22 @@ class TrackingWebSocket {
         const data = JSON.parse(event.data);
         this.notifyListeners("message", data);
       } catch (error) {
-        console.error("解析WebSocket消息失败:", error);
+        console.error("Failed to parse WebSocket message", error);
       }
     };
 
     this.ws.onclose = () => {
-      console.log("WebSocket连接已关闭");
+      console.log("WebSocket connection closed");
       this.notifyListeners("close");
     };
 
     this.ws.onerror = (error) => {
-      console.error("WebSocket错误:", error);
+      console.error("WebSocket error:", error);
       this.notifyListeners("error", error);
     };
   }
 
+  // 断开连接 / Disconnect
   disconnect() {
     if (this.ws) {
       this.ws.close();
@@ -468,6 +535,7 @@ class TrackingWebSocket {
     }
   }
 
+  // 添加监听器 / Add Listener
   addListener(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
@@ -475,6 +543,7 @@ class TrackingWebSocket {
     this.listeners.get(event).push(callback);
   }
 
+  // 移除监听器 / Remove Listener
   removeListener(event, callback) {
     if (this.listeners.has(event)) {
       const callbacks = this.listeners.get(event);
@@ -485,13 +554,17 @@ class TrackingWebSocket {
     }
   }
 
+  // 通知监听器 / Notify Listeners
   notifyListeners(event, data) {
     if (this.listeners.has(event)) {
       this.listeners.get(event).forEach((callback) => {
         try {
           callback(data);
         } catch (error) {
-          console.error("WebSocket监听器回调错误:", error);
+          console.error(
+            "WebSocket listener callback error / WebSocket监听器回调错误:",
+            error
+          );
         }
       });
     }
@@ -501,15 +574,15 @@ class TrackingWebSocket {
 export const trackingWebSocket = new TrackingWebSocket();
 
 // =================
-// 工具函数
+// 工具函数 / Utility Functions
 // =================
 
-// 格式化价格
+// 格式化价格 / Format Price
 export const formatPrice = (price) => {
   return `$${price.toFixed(2)}`;
 };
 
-// 格式化距离
+// 格式化距离 / Format Distance
 export const formatDistance = (distance) => {
   if (distance < 1) {
     return `${(distance * 1000).toFixed(0)}m`;
@@ -517,10 +590,10 @@ export const formatDistance = (distance) => {
   return `${distance.toFixed(1)}km`;
 };
 
-// 格式化时间
+// 格式化时间 / Format Time
 export const formatTime = (timeString) => {
   const date = new Date(timeString);
-  return date.toLocaleString("zh-CN", {
+  return date.toLocaleString("en-US", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -529,7 +602,7 @@ export const formatTime = (timeString) => {
   });
 };
 
-// 格式化相对时间
+// 格式化相对时间 / Format Relative Time
 export const formatRelativeTime = (timeString) => {
   const now = new Date();
   const time = new Date(timeString);
@@ -539,51 +612,29 @@ export const formatRelativeTime = (timeString) => {
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-  if (minutes < 1) return "刚刚";
-  if (minutes < 60) return `${minutes}分钟前`;
-  if (hours < 24) return `${hours}小时前`;
-  if (days < 7) return `${days}天前`;
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  if (hours < 24) return `${hours} hours ago`;
+  if (days < 7) return `${days} days ago`;
 
   return formatTime(timeString);
 };
 
-// 验证手机号
+// 验证手机号 / Validate Phone Number
 export const validatePhone = (phone) => {
   const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
   return phoneRegex.test(phone);
 };
 
-// 验证邮箱
+// 验证邮箱 / Validate Email
 export const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// 验证信用卡号
-export const validateCreditCard = (cardNumber) => {
-  const cleanNumber = cardNumber.replace(/\s/g, "");
-  return /^\d{16}$/.test(cleanNumber);
-};
-
-// 格式化信用卡号显示
-export const formatCreditCardNumber = (cardNumber) => {
-  const cleanNumber = cardNumber.replace(/\s/g, "");
-  return cleanNumber.replace(/(.{4})/g, "$1 ").trim();
-};
-
-// 脱敏信用卡号
-export const maskCreditCardNumber = (cardNumber) => {
-  const cleanNumber = cardNumber.replace(/\s/g, "");
-  if (cleanNumber.length < 4) return cardNumber;
-
-  const lastFour = cleanNumber.slice(-4);
-  const masked = "*".repeat(cleanNumber.length - 4);
-  return formatCreditCardNumber(masked + lastFour);
-};
-
-// 计算两点之间的距离 (单位: km)
+// 计算两点之间的距离 (单位: km) / Calculate Distance Between Two Points (unit: km)
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // 地球半径 (km)
+  const R = 6371; // 地球半径 (km) / Earth radius (km)
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -596,12 +647,12 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// 生成唯一ID
+// 生成唯一ID / Generate Unique ID
 export const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-// 防抖函数
+// 防抖函数 / Debounce Function
 export const debounce = (func, wait) => {
   let timeout;
   return function executedFunction(...args) {
@@ -614,7 +665,7 @@ export const debounce = (func, wait) => {
   };
 };
 
-// 节流函数
+// 节流函数 / Throttle Function
 export const throttle = (func, limit) => {
   let inThrottle;
   return function (...args) {
@@ -626,45 +677,143 @@ export const throttle = (func, limit) => {
   };
 };
 
-// 检查订单是否可以取消
+// 检查订单是否可以取消 / Check if Order Can Be Cancelled
 export const canCancelOrder = (order) => {
-  const cancelableStatuses = ["PENDING_PAYMENT", "PAID", "PREPARING"];
+  const cancelableStatuses = [
+    ORDER_STATUS.PENDING_PAYMENT,
+    ORDER_STATUS.PAID,
+    ORDER_STATUS.PREPARING,
+  ];
   return cancelableStatuses.includes(order.status);
 };
 
-// 检查订单是否需要确认收货
+// 检查订单是否需要确认收货 / Check if Order Needs Delivery Confirmation
 export const needsDeliveryConfirmation = (order) => {
-  return order.status === "DELIVERED" && order.requireSignature;
+  return order.status === ORDER_STATUS.DELIVERED && order.requireSignature;
 };
 
-// 获取订单状态颜色
+// 检查订单是否可以评价 / Check if Order Can Be Reviewed
+export const canReviewOrder = (order) => {
+  return order.status === ORDER_STATUS.COMPLETED;
+};
+
+// 获取订单状态颜色 / Get Order Status Color
 export const getOrderStatusColor = (status) => {
   const colorMap = {
-    PENDING_PAYMENT: "#faad14", // 橙色
-    PAID: "#52c41a", // 绿色
-    PREPARING: "#1890ff", // 蓝色
-    PICKING_UP: "#722ed1", // 紫色
-    PICKED_UP: "#722ed1", // 紫色
-    DELIVERING: "#1890ff", // 蓝色
-    DELIVERED: "#52c41a", // 绿色
-    COMPLETED: "#52c41a", // 绿色
-    CANCELLED: "#ff4d4f", // 红色
-    FAILED: "#ff4d4f", // 红色
+    [ORDER_STATUS.PENDING_PAYMENT]: "#faad14", // Orange / 橙色
+    [ORDER_STATUS.PAID]: "#52c41a", // Green / 绿色
+    [ORDER_STATUS.PREPARING]: "#1890ff", // Blue / 蓝色
+    [ORDER_STATUS.PICKING_UP]: "#722ed1", // Purple / 紫色
+    [ORDER_STATUS.PICKED_UP]: "#722ed1", // Purple / 紫色
+    [ORDER_STATUS.DELIVERING]: "#1890ff", // Blue / 蓝色
+    [ORDER_STATUS.DELIVERED]: "#52c41a", // Green / 绿色
+    [ORDER_STATUS.COMPLETED]: "#52c41a", // Green / 绿色
+    [ORDER_STATUS.CANCELLED]: "#ff4d4f", // Red / 红色
+    [ORDER_STATUS.FAILED]: "#ff4d4f", // Red / 红色
   };
   return colorMap[status] || "#d9d9d9";
 };
 
-// 导出默认对象
+// 获取订单状态显示文本 / Get Order Status Display Text
+export const getOrderStatusText = (status) => {
+  return ORDER_STATUS_TEXT[status] || status;
+};
+
+// 获取最近的配送站 / Get Nearest Delivery Station
+export const getNearestStation = (latitude, longitude) => {
+  let nearestStation = null;
+  let minDistance = Infinity;
+
+  Object.values(DELIVERY_STATIONS).forEach((station) => {
+    const distance = calculateDistance(
+      latitude,
+      longitude,
+      station.latitude,
+      station.longitude
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestStation = station;
+    }
+  });
+
+  return nearestStation;
+};
+
+// 验证订单重量和体积限制 / Validate Order Weight and Volume Limits
+export const validateOrderLimits = (items, deliveryType) => {
+  const totalWeight = items.reduce(
+    (sum, item) => sum + item.weight * item.quantity,
+    0
+  );
+  const totalVolume = items.reduce(
+    (sum, item) => sum + item.volume * item.quantity,
+    0
+  );
+
+  const limits = {
+    [DELIVERY_TYPE.ROBOT]: { maxWeight: 30, maxVolume: 100 },
+    [DELIVERY_TYPE.DRONE]: { maxWeight: 5, maxVolume: 20 },
+  };
+
+  const limit = limits[deliveryType];
+  if (!limit) return { valid: false, reason: "Invalid delivery type" };
+
+  if (totalWeight > limit.maxWeight) {
+    return {
+      valid: false,
+      reason: `Total weight (${totalWeight}kg) exceeds ${deliveryType.toLowerCase()} limit (${
+        limit.maxWeight
+      }kg)`,
+    };
+  }
+
+  if (totalVolume > limit.maxVolume) {
+    return {
+      valid: false,
+      reason: `Total volume (${totalVolume}L) exceeds ${deliveryType.toLowerCase()} limit (${
+        limit.maxVolume
+      }L)`,
+    };
+  }
+
+  return { valid: true };
+};
+
+// 获取支付方式显示名称 / Get Payment Method Display Name
+export const getPaymentMethodName = (method) => {
+  const nameMap = {
+    [PAYMENT_METHOD.CREDIT_CARD]: "Credit Card",
+    [PAYMENT_METHOD.DEBIT_CARD]: "Debit Card",
+    [PAYMENT_METHOD.PAYPAL]: "PayPal",
+    [PAYMENT_METHOD.APPLE_PAY]: "Apple Pay",
+    [PAYMENT_METHOD.GOOGLE_PAY]: "Google Pay",
+  };
+  return nameMap[method] || method;
+};
+
+// 格式化评分显示 / Format Rating Display
+export const formatRating = (rating) => {
+  const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+  return `${stars} (${rating}/5)`;
+};
+
+// 导出默认对象 / Export Default Object
 export default {
   API_CONFIG,
   ORDER_STATUS,
+  ORDER_STATUS_TEXT,
   DELIVERY_TYPE,
   DELIVERY_SPEED,
   PAYMENT_METHOD,
   NOTIFICATION_TYPE,
+  ADDRESS_LABEL,
+  DELIVERY_STATIONS,
   authAPI,
   userAPI,
   addressAPI,
+  stationAPI,
   orderAPI,
   trackingAPI,
   paymentAPI,
@@ -678,16 +827,19 @@ export default {
   formatRelativeTime,
   validatePhone,
   validateEmail,
-  validateCreditCard,
-  formatCreditCardNumber,
-  maskCreditCardNumber,
   calculateDistance,
   generateId,
   debounce,
   throttle,
   canCancelOrder,
   needsDeliveryConfirmation,
+  canReviewOrder,
   getOrderStatusColor,
+  getOrderStatusText,
+  getNearestStation,
+  validateOrderLimits,
+  getPaymentMethodName,
+  formatRating,
   getAuthToken,
   setAuthTokens,
   clearAuthTokens,
