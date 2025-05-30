@@ -1,6 +1,6 @@
 package com.swiftpigeon.backend.models;
 
-public record LoginResponse(
-        String token
-) {
+public enum UserRole {
+    ROLE_HOST,
+    ROLE_GUEST,
 }
