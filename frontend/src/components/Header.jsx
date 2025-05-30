@@ -1,239 +1,100 @@
-import React, { useState } from "react";
-import { Layout, Avatar, Menu, Typography, Divider, Dropdown } from "antd";
-import { TruckOutlined, LogoutOutlined, UserOutlined } from "@ant-design/icons";
-import BoringAvatar from "boring-avatars";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { Layout, Menu, Typography, Button } from "antd";
 
 const { Header } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
-// get random color for avatar
-function generateAvatarColor() {
-  let color;
-  do {
-    color = `#${Math.floor(Math.random() * 0xffffff)
-      .toString(16)
-      .padStart(6, "0")}`;
-  } while (lightTool(color));
-  return color;
-}
-
-function lightTool(hex) {
-  const r = parseInt(hex.substr(1, 2), 16);
-  const g = parseInt(hex.substr(3, 2), 16);
-  const b = parseInt(hex.substr(5, 2), 16);
-  const lumi = 0.299 * r + 0.587 * g + 0.114 * b;
-  return lumi > 200;
-}
-
-export default function AppHeader({ user, setUser, setAuthVisible }) {
-  const [isHover, setIsHover] = useState(false);
-  const [avatarColor] = useState(generateAvatarColor());
-  const navigate = useNavigate();
-
-  let username = "User";
-
-  if (user && user.name) {
-    username = user.name.charAt(0).toUpperCase() + user.name.slice(1);
-  }
-
-  const handleLogout = () => {
-    // clear all the tokens
-    localStorage.clear();
-    sessionStorage.clear();
-    setUser(null);
-    navigate("/");
-  };
-
-  const menuItemStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "14px 20px",
-    fontSize: 17,
-    fontWeight: 500,
-  };
-
-  const iconStyle = {
-    fontSize: 20,
-  };
-
-  const labelStyle = {
-    flex: 1,
-    whiteSpace: "nowrap",
-  };
-
-  const avatarDropDown = (
-    <div
-      style={{
-        width: 260,
-        backgroundColor: "#e5e5e5",
-        padding: 12,
-        borderRadius: 20,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-        overflow: "hidden",
-      }}
-    >
-      {/* user information */}
-      <div
-        style={{
-          textAlign: "center",
-          padding: "28px 24px 16px",
-        }}
-      >
-        <Text strong style={{ fontSize: 20, color: "#000" }}>
-          Hi, {username}
-        </Text>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginTop: 14,
-            marginBottom: 14,
-          }}
-        >
-          <BoringAvatar
-            size={48}
-            name={username}
-            variant="beam"
-            colors={["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"]}
-          />
-        </div>
-        <Text type="secondary" style={{ fontSize: 16 }}>
-          {user?.email || "unknown@example.com"}
-        </Text>
-      </div>
-
-      <Divider style={{ margin: "0 0 4px 0", borderColor: "#e5e5e5" }} />
-
-      <Menu
-        mode="vertical"
-        selectable={false}
-        style={{ border: "none", padding: "8px 0" }}
-        onClick={({ key }) => {
-          if (key === "logout") {
-            handleLogout();
-          }
-          // if (info.key === "profile") {
-          //   onProfileClick?.(); // add profile
-          // }
-        }}
-      >
-        <Menu.Item key="profile" style={{ padding: 0 }}>
-          <div style={menuItemStyle}>
-            <UserOutlined style={{ ...iconStyle, color: "#1890ff" }} />
-            <span style={labelStyle}>Profile</span>
-          </div>
-        </Menu.Item>
-
-        <Menu.Item key="logout" style={{ padding: 0 }}>
-          <div style={menuItemStyle}>
-            <LogoutOutlined style={{ ...iconStyle, color: "red" }} />
-            <span style={labelStyle}>Logout</span>
-          </div>
-        </Menu.Item>
-      </Menu>
-    </div>
-  );
+const AppHeader = ({
+  navBg,
+  menuTheme,
+  scrollToSection,
+  onSignUp,
+  onLogin,
+}) => {
+  // 导航菜单项配置 - Features和Pricing
+  const menuItems = [
+    { key: "features", label: "Features" },
+    { key: "pricing", label: "Pricing" },
+  ];
 
   return (
     <Header
-      className="fixed top-0 left-0 w-full flex justify-between items-center px-6 z-50"
-      style={{
-        height: "85px",
-        boxShadow: "inset 0 -1px 0 rgba(255, 255, 255, 0.2)",
-      }}
+      className={`fixed w-full z-50 transition-all duration-300 ease-in-out shadow-md ${navBg}`}
+      style={{ padding: "0 50px" }}
     >
-      <div className="flex items-center gap-4">
-        <Link to="/" className="flex items-center gap-4">
-          <div className="w-14 h-14 flex items-center justify-center bg-[#0f766e] rounded-xl">
-            <TruckOutlined style={{ fontSize: "2.5rem", color: "#99f6e4" }} />
-          </div>
-          <div className="flex flex-col justify-between h-15 pl-3 leading-none">
-            <Title
-              level={3}
-              style={{
-                margin: 0,
-                marginBottom: 0,
-                fontWeight: 600,
-                fontSize: "2rem",
-                lineHeight: 1,
-                fontFamily: "'Montserrat', sans-serif",
-                color: "#22d3ee",
-              }}
-            >
-              Drop
-            </Title>
-            <Title
-              level={3}
-              style={{
-                margin: 0,
-                marginBottom: 0,
-                fontWeight: 600,
-                fontSize: "2rem",
-                lineHeight: 1,
-                fontFamily: "'Montserrat', sans-serif",
-                color: "#ffffff",
-              }}
-            >
-              Nest
-            </Title>
-          </div>
-        </Link>
+      <div className="flex items-center justify-between h-full">
+        {/* 左侧：Logo + DropNest + 导航菜单 */}
+        <div className="flex items-center">
+          {/* Logo */}
+          <img
+            src="/images/logo.png"
+            alt="DropNest Logo"
+            className="h-10 w-10 mr-4 transition-opacity duration-300"
+          />
 
-        {/* create delivery button  */}
-        {user && (
-          <div
-            onClick={() => navigate("/createDelivery")}
-            className="ml-4 px-6 py-1.5 rounded-full font-semibold text-white text-xl transition-all duration-300 hover:scale-105 hover:bg-cyan-600/30"
+          {/* DropNest 标题 */}
+          <Title
+            level={3}
+            className={`!mb-0 mr-8 transition-colors duration-300 ${
+              menuTheme === "dark" ? "!text-white" : "!text-neutral-800"
+            }`}
           >
-            New Delivery
-          </div>
-        )}
-      </div>
+            DropNest
+          </Title>
 
-      {user ? (
-        <div className="flex items-center gap-3 text-white">
-          <Dropdown
-            placement="bottomRight"
-            dropdownRender={() => avatarDropDown}
-            trigger="click"
-          >
-            <Avatar
-              style={{
-                backgroundColor: avatarColor,
-                color: "#fff",
-                cursor: "pointer",
-                width: 45,
-                height: 45,
-                fontSize: 18,
-                fontWeight: 600,
-              }}
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </Avatar>
-          </Dropdown>
+          {/* 导航菜单 */}
+          <Menu
+            theme={menuTheme}
+            mode="horizontal"
+            items={menuItems.map((item) => ({
+              key: item.key,
+              label: item.label,
+              className: `${
+                menuTheme === "dark"
+                  ? "hover:!bg-blue-700"
+                  : "hover:!bg-gray-200"
+              }`,
+              onClick: () => {
+                if (item.key === "features" || item.key === "pricing") {
+                  scrollToSection(item.key + "-section");
+                }
+              },
+            }))}
+            className="bg-transparent border-b-0"
+            style={{ lineHeight: "64px" }}
+          />
         </div>
-      ) : (
-        <span
-          className="flex items-center gap-2 font-medium text-lg cursor-pointer px-3 py-1.5 rounded-md font-medium transition duration-300"
-          style={{
-            fontSize: 24,
-            color: isHover ? "#40e0d0" : "#ffffff",
-          }}
-          onClick={() => {
-            console.log("Clicked Sign In");
-            // setAuthVisible(true);
-            if (setAuthVisible) setAuthVisible(true);
-          }}
-          onMouseEnter={(e) => setIsHover(true)}
-          onMouseLeave={(e) => setIsHover(false)}
-        >
-          <UserOutlined className="mr-2" />
-          Sign In
-        </span>
-      )}
-      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20" />
+
+        {/* 右侧：Sign Up + Log In 按钮 */}
+        <div className="flex items-center gap-3">
+          <Button
+            type="text"
+            size="large"
+            className={`font-medium transition-all duration-300 ${
+              menuTheme === "dark"
+                ? "text-white hover:!text-blue-300 hover:!bg-blue-700/20"
+                : "text-neutral-800 hover:!text-blue-600 hover:!bg-gray-200"
+            }`}
+            onClick={onSignUp}
+          >
+            Sign Up
+          </Button>
+          <Button
+            type="primary"
+            size="large"
+            className={`font-medium transition-all duration-300 ${
+              menuTheme === "dark"
+                ? "bg-blue-500 border-blue-500 hover:!bg-blue-400 hover:!border-blue-400"
+                : "bg-blue-600 border-blue-600 hover:!bg-blue-700 hover:!border-blue-700"
+            }`}
+            onClick={onLogin}
+          >
+            Log In
+          </Button>
+        </div>
+      </div>
     </Header>
   );
-}
+};
+
+export default AppHeader;
