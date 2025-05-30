@@ -27,9 +27,9 @@ const AppHeader = ({
         <div className="flex items-center">
           {/* Logo */}
           <img
-            src="/images/logo.png"
+            src="../images/SwiftPigeonLogo.png"
             alt="DropNest Logo"
-            className="h-10 w-10 mr-4 transition-opacity duration-300"
+            className="h-10 w-10 mr-4 transition-opacity duration-300 rounded-md"
           />
 
           {/* DropNest 标题 */}
@@ -80,12 +80,12 @@ const AppHeader = ({
             Sign Up
           </Button>
           <Button
-            type="primary"
+            type="text"
             size="large"
             className={`font-medium transition-all duration-300 ${
               menuTheme === "dark"
-                ? "bg-blue-500 border-blue-500 hover:!bg-blue-400 hover:!border-blue-400"
-                : "bg-blue-600 border-blue-600 hover:!bg-blue-700 hover:!border-blue-700"
+                ? "text-white border border-current hover:!text-blue-300 hover:!border-blue-300 hover:!bg-blue-700/20"
+                : "text-neutral-800 border border-current hover:!text-blue-600 hover:!border-blue-600 hover:!bg-gray-200"
             }`}
             onClick={onLogin}
           >

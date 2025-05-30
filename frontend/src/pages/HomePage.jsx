@@ -7,8 +7,8 @@ import {
   EyeOutlined,
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
-
-const { Header, Content, Footer } = Layout;
+import AppHeader from "../components/Header";
+const { Content, Footer } = Layout;
 const { Title, Paragraph } = Typography;
 
 // Data derived from API specification for card content (保持不变)
@@ -85,7 +85,7 @@ const App = () => {
       // 2. Hero区域背景图片淡出为米白色效果
       if (heroSectionRef.current) {
         const heroHeight = heroSectionRef.current.offsetHeight;
-        // 在Hero区域高度的 مثلا 75% 内完成过渡
+        // 在Hero区域高度的75%内完成过渡
         const fadeEndScroll = heroHeight * 0.75;
         const currentFadeProgress = Math.min(1, scrollY / fadeEndScroll);
         setHeroOverlayOpacity(currentFadeProgress);
@@ -98,9 +98,6 @@ const App = () => {
         // 当Feature区域顶部进入视窗的75%时显示卡片
         if (top < windowHeight * 0.85) {
           setShowFeatures(true);
-        } else {
-          // 可选: 如果希望卡片在向上滚动时再次隐藏，可以取消下面的注释
-          // setShowFeatures(false);
         }
       }
     };
@@ -110,14 +107,6 @@ const App = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []); // 空依赖数组，effect仅在挂载和卸载时运行
 
-  // 导航菜单项配置
-  const menuItems = [
-    { key: "features", label: "Features" },
-    { key: "pricing", label: "Pricing" },
-    { key: "signup", label: "Sign Up", className: "ml-auto" }, // Tailwind class 使其靠右
-    { key: "login", label: "Log In" },
-  ];
-
   // 平滑滚动到指定ID的元素
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
@@ -126,56 +115,36 @@ const App = () => {
     }
   };
 
+  // 处理注册按钮点击
+  const handleSignUp = () => {
+    // 添加注册逻辑
+    console.log("Sign Up clicked");
+  };
+
+  // 处理登录按钮点击
+  const handleLogin = () => {
+    // 添加登录逻辑
+    console.log("Log In clicked");
+  };
+
   return (
     <Layout className="min-h-screen bg-gray-100">
-      {" "}
-      {/* 整体布局背景设为米白色 */}
       {/* 导航栏 Header */}
-      <Header
-        className={`fixed w-full z-50 transition-all duration-300 ease-in-out shadow-md ${navBg}`}
-        style={{ padding: "0 50px" }}
-      >
-        <div className="flex items-center h-full">
-          <Title
-            level={3}
-            className={`!mb-0 mr-10 transition-colors duration-300 ${
-              menuTheme === "dark" ? "!text-white" : "!text-neutral-800"
-            }`}
-          >
-            DropNest
-          </Title>
-          <Menu
-            theme={menuTheme} // 动态设置Menu主题
-            mode="horizontal"
-            items={menuItems.map((item) => ({
-              key: item.key,
-              label: item.label,
-              className: `${item.className || ""} ${
-                menuTheme === "dark"
-                  ? "hover:!bg-blue-700"
-                  : "hover:!bg-gray-200"
-              }`, // 自定义hover效果
-              onClick: () => {
-                if (item.key === "features" || item.key === "pricing") {
-                  scrollToSection(item.key + "-section");
-                }
-                // 后续添加注册/登录的导航逻辑
-              },
-            }))}
-            className="flex-grow bg-transparent border-b-0" // 使Menu背景透明
-            style={{ lineHeight: "64px" }}
-          />
-        </div>
-      </Header>
+      <AppHeader
+        navBg={navBg}
+        menuTheme={menuTheme}
+        scrollToSection={scrollToSection}
+        onSignUp={handleSignUp}
+        onLogin={handleLogin}
+      />
+
       {/* 主要内容区域 Content */}
       <Content className="pt-[64px]">
-        {" "}
-        {/* pt-[64px] 为Header高度留出空间 */}
         {/* Hero 区域 */}
         <section
           ref={heroSectionRef}
           id="hero-section"
-          className="h-screen flex flex-col items-center justify-center text-center relative overflow-hidden" // `overflow-hidden` 防止滚动条问题
+          className="h-screen flex flex-col items-center justify-center text-center relative overflow-hidden"
           style={{
             backgroundImage: "url('../images/delivery.jpeg')", // 请确保图片路径正确
             backgroundSize: "cover",
@@ -185,13 +154,11 @@ const App = () => {
         >
           {/* 米白色覆盖层，用于实现背景图片到纯色的过渡 */}
           <div
-            className="absolute inset-0 bg-gray-100 transition-opacity duration-500 ease-in-out" // 米白色
+            className="absolute inset-0 bg-gray-100 transition-opacity duration-500 ease-in-out"
             style={{ opacity: heroOverlayOpacity, zIndex: 1 }}
           />
           {/* Hero区域内容，确保在覆盖层之上 */}
           <div className="z-10 p-5 relative">
-            {" "}
-            {/* 添加 relative 使 zIndex 生效 */}
             <Title
               level={1}
               className="!text-6xl !text-white font-bold mb-6"
@@ -217,8 +184,6 @@ const App = () => {
           </div>
           {/* 向下滚动指示器 (可选) */}
           <div className="absolute bottom-10 text-white animate-bounce z-10">
-            {" "}
-            {/* 确保在覆盖层之上 */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -235,12 +200,12 @@ const App = () => {
             </svg>
           </div>
         </section>
+
         {/* Features & Pricing 区域 - 滚动时浮现 */}
-        {/* 注意：此区域的背景已是米白色，因为 Content 的父级 Layout 已设为 bg-gray-100 */}
         <section
           id="features-section"
           ref={featuresSectionRef}
-          className="py-20 bg-gray-100" // 主体内容区域的米白色背景
+          className="py-20 bg-gray-100"
         >
           <div className="container mx-auto px-6">
             <Title
@@ -325,10 +290,9 @@ const App = () => {
             </Row>
           </div>
         </section>
+
         {/* Pricing 区域 */}
         <section id="pricing-section" className="py-20 bg-white">
-          {" "}
-          {/* 此区域用纯白色背景以区分 */}
           <div className="container mx-auto px-6">
             <Title
               level={2}
@@ -336,7 +300,7 @@ const App = () => {
             >
               Flexible Delivery Solutions
             </Title>
-            {/* 卡片容器，同样根据 showFeatures state 控制效果 (可以考虑为此区域设置单独的 state 和 ref 如果需要不同的触发时机) */}
+            {/* 卡片容器，同样根据 showFeatures state 控制效果 */}
             <Row
               gutter={[32, 32]}
               className={`transition-all duration-1000 ease-in-out ${
@@ -429,6 +393,7 @@ const App = () => {
           </div>
         </section>
       </Content>
+
       {/* 页脚 Footer */}
       <Footer className="text-center bg-neutral-800 text-gray-400 py-10">
         DropNest ©{new Date().getFullYear()} - Your Future Delivery Partner.
