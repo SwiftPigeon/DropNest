@@ -7,7 +7,7 @@ import {
   EyeOutlined,
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
-import AppHeader from "../components/Header";
+import AppHeader from "../components/Layout/Header";
 const { Content, Footer } = Layout;
 const { Title, Paragraph } = Typography;
 

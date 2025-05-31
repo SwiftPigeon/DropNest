@@ -5,7 +5,7 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import React, { useEffect, useRef, useState } from "react";
-import AppHeader from "../components/Header";
+import AppHeader from "../components/Layout/Header";
 import { Layout, Steps } from "antd";
 import {
   AimOutlined,
