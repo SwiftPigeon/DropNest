@@ -8,6 +8,8 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import AppHeader from "../components/Layout/Header";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 const { Content, Footer } = Layout;
 const { Title, Paragraph } = Typography;
 
@@ -53,7 +55,7 @@ const speedOptionsData = [
 ];
 
 // 主应用组件
-const App = () => {
+const HomePage = () => {
   // 导航栏背景色 state
   const [navBg, setNavBg] = useState("bg-gray-100"); // 初始米白色
   // 导航栏文字颜色 state (配合 Ant Design Menu theme)
@@ -66,6 +68,9 @@ const App = () => {
   const featuresSectionRef = useRef(null);
   // 指向Hero区域的ref (用于计算滚动比例)
   const heroSectionRef = useRef(null);
+
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // 处理滚动事件的 Effect Hook
   useEffect(() => {
@@ -115,16 +120,22 @@ const App = () => {
     }
   };
 
-  // 处理注册按钮点击
   const handleSignUp = () => {
-    // 添加注册逻辑
+    navigate("/register");
     console.log("Sign Up clicked");
   };
 
-  // 处理登录按钮点击
   const handleLogin = () => {
-    // 添加登录逻辑
+    navigate("/login");
     console.log("Log In clicked");
+  };
+
+  const handleTryDelivery = () => {
+    if (isAuthenticated) {
+      navigate("/createDelivery");
+    } else {
+      navigate("/login");
+    }
   };
 
   return (
@@ -177,9 +188,10 @@ const App = () => {
             <Button
               type="primary"
               size="large"
+              onClick={handleTryDelivery}
               className="bg-blue-500 hover:bg-blue-700 border-blue-500 hover:border-blue-700 shadow-lg"
             >
-              Get Started
+              Try Delivery Now!
             </Button>
           </div>
           {/* 向下滚动指示器 (可选) */}
@@ -386,9 +398,9 @@ const App = () => {
                 after signing up. Delivery is subject to item type and adherence
                 to our prohibited items list.
               </Paragraph>
-              <Button type="link" className="text-blue-600 hover:text-blue-800">
+              {/* <Button type="link" className="text-blue-600 hover:text-blue-800">
                 View Prohibited Items
-              </Button>
+              </Button> */}
             </div>
           </div>
         </section>
@@ -397,17 +409,17 @@ const App = () => {
       {/* 页脚 Footer */}
       <Footer className="text-center bg-neutral-800 text-gray-400 py-10">
         DropNest ©{new Date().getFullYear()} - Your Future Delivery Partner.
-        <div className="mt-2">
+        {/* <div className="mt-2">
           <a href="/privacy" className="text-gray-400 hover:text-white mx-2">
             Privacy Policy
           </a>
           <a href="/terms" className="text-gray-400 hover:text-white mx-2">
             Terms of Service
           </a>
-        </div>
+        </div> */}
       </Footer>
     </Layout>
   );
 };
 
-export default App;
+export default HomePage;
