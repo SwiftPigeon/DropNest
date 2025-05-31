@@ -74,4 +74,4 @@ public class Payment {
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
-} 
+}
