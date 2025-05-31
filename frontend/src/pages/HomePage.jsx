@@ -8,8 +8,11 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import AppHeader from "../components/Layout/Header";
+import LoginModal from "../components/Auth/LoginModal";
+import RegisterModal from "../components/Auth/RegisterModal";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
 const { Content, Footer } = Layout;
 const { Title, Paragraph } = Typography;
 
@@ -57,13 +60,17 @@ const speedOptionsData = [
 // 主应用组件
 const HomePage = () => {
   // 导航栏背景色 state
-  const [navBg, setNavBg] = useState("bg-gray-100"); // 初始米白色
+  const [navBg, setNavBg] = useState("bg-gray-100");
   // 导航栏文字颜色 state (配合 Ant Design Menu theme)
-  const [menuTheme, setMenuTheme] = useState("light"); // 初始浅色主题，对应深色文字
+  const [menuTheme, setMenuTheme] = useState("light");
   // Hero区域背景图片上覆盖层的透明度 state
   const [heroOverlayOpacity, setHeroOverlayOpacity] = useState(0);
   // Feature卡片是否显示 state
   const [showFeatures, setShowFeatures] = useState(false);
+  // Modal状态管理
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
+
   // 指向Feature区域的ref
   const featuresSectionRef = useRef(null);
   // 指向Hero区域的ref (用于计算滚动比例)
@@ -72,25 +79,24 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  // 处理滚动事件的 Effect Hook
+  // 处理滚动事件的 Effect Hook (保持不变)
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      const navTriggerHeight = 50; // 导航栏颜色变化的滚动阈值
+      const navTriggerHeight = 50;
 
       // 1. 导航栏背景和主题变化
       if (scrollY > navTriggerHeight) {
-        setNavBg("bg-blue-600"); // 滚动后变为蓝色
-        setMenuTheme("dark"); // 菜单变为深色主题 (浅色文字)
+        setNavBg("bg-blue-600");
+        setMenuTheme("dark");
       } else {
-        setNavBg("bg-gray-100"); // 初始米白色
-        setMenuTheme("light"); // 菜单变为浅色主题 (深色文字)
+        setNavBg("bg-gray-100");
+        setMenuTheme("light");
       }
 
       // 2. Hero区域背景图片淡出为米白色效果
       if (heroSectionRef.current) {
         const heroHeight = heroSectionRef.current.offsetHeight;
-        // 在Hero区域高度的75%内完成过渡
         const fadeEndScroll = heroHeight * 0.75;
         const currentFadeProgress = Math.min(1, scrollY / fadeEndScroll);
         setHeroOverlayOpacity(currentFadeProgress);
@@ -100,7 +106,6 @@ const HomePage = () => {
       if (featuresSectionRef.current) {
         const { top } = featuresSectionRef.current.getBoundingClientRect();
         const windowHeight = window.innerHeight;
-        // 当Feature区域顶部进入视窗的75%时显示卡片
         if (top < windowHeight * 0.85) {
           setShowFeatures(true);
         }
@@ -108,11 +113,10 @@ const HomePage = () => {
     };
 
     window.addEventListener("scroll", handleScroll);
-    // 清理函数：组件卸载时移除滚动事件监听器
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []); // 空依赖数组，effect仅在挂载和卸载时运行
+  }, []);
 
-  // 平滑滚动到指定ID的元素
+  // 平滑滚动到指定ID的元素 (保持不变)
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
     if (element) {
@@ -120,21 +124,42 @@ const HomePage = () => {
     }
   };
 
+  // 修改后的处理函数 - 显示Modal而非导航
   const handleSignUp = () => {
-    navigate("/register");
-    console.log("Sign Up clicked");
+    setRegisterModalVisible(true);
+    console.log("Sign Up modal opened");
   };
 
   const handleLogin = () => {
-    navigate("/login");
-    console.log("Log In clicked");
+    setLoginModalVisible(true);
+    console.log("Login modal opened");
+  };
+
+  // Modal关闭处理函数
+  const handleLoginModalClose = () => {
+    setLoginModalVisible(false);
+  };
+
+  const handleRegisterModalClose = () => {
+    setRegisterModalVisible(false);
+  };
+
+  // Modal之间切换的处理函数
+  const handleSwitchToRegister = () => {
+    setLoginModalVisible(false);
+    setRegisterModalVisible(true);
+  };
+
+  const handleSwitchToLogin = () => {
+    setRegisterModalVisible(false);
+    setLoginModalVisible(true);
   };
 
   const handleTryDelivery = () => {
     if (isAuthenticated) {
       navigate("/createDelivery");
     } else {
-      navigate("/login");
+      setLoginModalVisible(true); // 显示登录Modal而非导航到登录页面
     }
   };
 
@@ -149,7 +174,21 @@ const HomePage = () => {
         onLogin={handleLogin}
       />
 
-      {/* 主要内容区域 Content */}
+      {/* 登录Modal */}
+      <LoginModal
+        visible={loginModalVisible}
+        onCancel={handleLoginModalClose}
+        onSwitchToRegister={handleSwitchToRegister}
+      />
+
+      {/* 注册Modal */}
+      <RegisterModal
+        visible={registerModalVisible}
+        onCancel={handleRegisterModalClose}
+        onSwitchToLogin={handleSwitchToLogin}
+      />
+
+      {/* 主要内容区域 Content (保持不变) */}
       <Content className="pt-[64px]">
         {/* Hero 区域 */}
         <section
@@ -157,18 +196,16 @@ const HomePage = () => {
           id="hero-section"
           className="h-screen flex flex-col items-center justify-center text-center relative overflow-hidden"
           style={{
-            backgroundImage: "url('../images/delivery.jpeg')", // 请确保图片路径正确
+            backgroundImage: "url('../images/delivery.jpeg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            backgroundAttachment: "fixed", // 使背景图片在滚动时固定，增强视差感
+            backgroundAttachment: "fixed",
           }}
         >
-          {/* 米白色覆盖层，用于实现背景图片到纯色的过渡 */}
           <div
             className="absolute inset-0 bg-gray-100 transition-opacity duration-500 ease-in-out"
             style={{ opacity: heroOverlayOpacity, zIndex: 1 }}
           />
-          {/* Hero区域内容，确保在覆盖层之上 */}
           <div className="z-10 p-5 relative">
             <Title
               level={1}
@@ -194,7 +231,6 @@ const HomePage = () => {
               Try Delivery Now!
             </Button>
           </div>
-          {/* 向下滚动指示器 (可选) */}
           <div className="absolute bottom-10 text-white animate-bounce z-10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -213,7 +249,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* Features & Pricing 区域 - 滚动时浮现 */}
+        {/* Features & Pricing 区域 - 滚动时浮现 (保持不变) */}
         <section
           id="features-section"
           ref={featuresSectionRef}
@@ -226,7 +262,6 @@ const HomePage = () => {
             >
               Why Choose DropNest?
             </Title>
-            {/* 卡片容器，根据 showFeatures state 控制透明度和位移 */}
             <Row
               gutter={[32, 32]}
               className={`transition-all duration-1000 ease-in-out ${
@@ -235,7 +270,6 @@ const HomePage = () => {
                   : "opacity-0 translate-y-10"
               }`}
             >
-              {/* Feature 卡片1 */}
               <Col xs={24} md={12} lg={6}>
                 <Card
                   bordered={false}
@@ -251,7 +285,6 @@ const HomePage = () => {
                   </Paragraph>
                 </Card>
               </Col>
-              {/* Feature 卡片2 */}
               <Col xs={24} md={12} lg={6}>
                 <Card
                   bordered={false}
@@ -267,7 +300,6 @@ const HomePage = () => {
                   </Paragraph>
                 </Card>
               </Col>
-              {/* Feature 卡片3 */}
               <Col xs={24} md={12} lg={6}>
                 <Card
                   bordered={false}
@@ -283,7 +315,6 @@ const HomePage = () => {
                   </Paragraph>
                 </Card>
               </Col>
-              {/* Feature 卡片4 */}
               <Col xs={24} md={12} lg={6}>
                 <Card
                   bordered={false}
@@ -303,7 +334,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* Pricing 区域 */}
+        {/* Pricing 区域 (保持不变) */}
         <section id="pricing-section" className="py-20 bg-white">
           <div className="container mx-auto px-6">
             <Title
@@ -312,7 +343,6 @@ const HomePage = () => {
             >
               Flexible Delivery Solutions
             </Title>
-            {/* 卡片容器，同样根据 showFeatures state 控制效果 */}
             <Row
               gutter={[32, 32]}
               className={`transition-all duration-1000 ease-in-out ${
@@ -398,25 +428,14 @@ const HomePage = () => {
                 after signing up. Delivery is subject to item type and adherence
                 to our prohibited items list.
               </Paragraph>
-              {/* <Button type="link" className="text-blue-600 hover:text-blue-800">
-                View Prohibited Items
-              </Button> */}
             </div>
           </div>
         </section>
       </Content>
 
-      {/* 页脚 Footer */}
+      {/* 页脚 Footer (保持不变) */}
       <Footer className="text-center bg-neutral-800 text-gray-400 py-10">
         DropNest ©{new Date().getFullYear()} - Your Future Delivery Partner.
-        {/* <div className="mt-2">
-          <a href="/privacy" className="text-gray-400 hover:text-white mx-2">
-            Privacy Policy
-          </a>
-          <a href="/terms" className="text-gray-400 hover:text-white mx-2">
-            Terms of Service
-          </a>
-        </div> */}
       </Footer>
     </Layout>
   );
