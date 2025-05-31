@@ -147,11 +147,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("refresh_token", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data));
 
-      message.success("登录成功！");
+      message.success("Login successful!");
       return { success: true, data };
     } catch (error) {
       console.error("Login error:", error);
-      message.error(error.message || "登录失败，请重试");
+      message.error(error.message || "Login failed, please try again");
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
@@ -185,11 +185,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("refresh_token", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data));
 
-      message.success("注册成功！");
+      message.success("Registration successful!");
       return { success: true, data };
     } catch (error) {
       console.error("Registration error:", error);
-      message.error(error.message || "注册失败，请重试");
+      message.error(error.message || "Registration failed, please try again");
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout error:", error);
     } finally {
       clearAuthData();
-      message.success("已安全登出");
+      message.success("Logged out successfully");
     }
   };
 
@@ -235,11 +235,11 @@ export const AuthProvider = ({ children }) => {
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      message.success("资料更新成功！");
+      message.success("Profile updated successfully!");
       return { success: true, data: updatedUser };
     } catch (error) {
       console.error("Profile update error:", error);
-      message.error("资料更新失败，请重试");
+      message.error("Profile update failed, please try again");
       return { success: false, error: error.message };
     }
   };
@@ -263,11 +263,11 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Password change failed");
       }
 
-      message.success("密码修改成功！");
+      message.success("Password changed successfully!");
       return { success: true };
     } catch (error) {
       console.error("Password change error:", error);
-      message.error("密码修改失败，请重试");
+      message.error("Password change failed, please try again");
       return { success: false, error: error.message };
     }
   };
