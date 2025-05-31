@@ -35,11 +35,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        // Skip JWT processing for auth and password endpoints
+        return path.startsWith("/auth/") || path.startsWith("/password/");
+    }
+
+    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        
         final String jwt = getJwtFromRequest(request);
         if (jwt == null) {
             filterChain.doFilter(request, response);

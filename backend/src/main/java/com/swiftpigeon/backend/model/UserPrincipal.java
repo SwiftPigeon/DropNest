@@ -17,8 +17,14 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Handle null role by defaulting to USER
+        UserRole role = userEntity.getRole();
+        if (role == null) {
+            role = UserRole.USER;
+        }
+        
         return Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().name())
+                new SimpleGrantedAuthority("ROLE_" + role.name())
         );
     }
 
