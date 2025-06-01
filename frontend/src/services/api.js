@@ -1,13 +1,12 @@
-// api.js - Complete API client with HTTP utilities and service functions
+// api.js - Complete API client with HTTP utilities and service functions (Updated)
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8080";
 
-// API endpoints configuration
+// API endpoints configuration (removed refresh token endpoint)
 export const API_ENDPOINTS = {
   // Authentication
   LOGIN: "/api/auth/login",
   REGISTER: "/api/auth/register",
-  REFRESH: "/api/auth/refresh",
   LOGOUT: "/api/auth/logout",
 
   // User Management
@@ -73,7 +72,7 @@ class HttpClient {
     }
   }
 
-  // Authenticated request method
+  // Authenticated request method (simplified - no token refresh)
   async authenticatedRequest(endpoint, options = {}) {
     const headers = {
       ...this.getAuthHeaders(),
@@ -82,7 +81,7 @@ class HttpClient {
 
     const response = await this.request(endpoint, { ...options, headers });
 
-    // Handle 401 Unauthorized - token might be expired
+    // Handle 401 Unauthorized - token expired, need to re-login
     if (response.status === 401) {
       throw new Error("AUTHENTICATION_REQUIRED");
     }
@@ -149,7 +148,7 @@ export const httpClient = new HttpClient();
 
 // ============ API SERVICE FUNCTIONS ============
 
-// Auth API functions
+// Auth API functions (removed refresh token functionality)
 export const loginUser = async ({ email, password }) => {
   const response = await httpClient.post(API_ENDPOINTS.LOGIN, {
     email,
@@ -183,16 +182,7 @@ export const logoutUser = async (token) => {
   return response.ok;
 };
 
-export const refreshToken = async (refreshToken) => {
-  const response = await httpClient.post(API_ENDPOINTS.REFRESH, {
-    refreshToken,
-  });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Token refresh failed");
-  }
-  return response.json();
-};
+// Removed refreshToken function
 
 // User API functions
 export const fetchUserProfile = async () => {

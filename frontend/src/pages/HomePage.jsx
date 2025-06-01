@@ -77,7 +77,7 @@ const HomePage = () => {
   const heroSectionRef = useRef(null);
 
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { currentUser } = useAuth();
 
   // 处理滚动事件的 Effect Hook (保持不变)
   useEffect(() => {
@@ -156,8 +156,8 @@ const HomePage = () => {
   };
 
   const handleTryDelivery = () => {
-    if (isAuthenticated) {
-      navigate("/createDelivery");
+    if (currentUser) {
+      navigate("/create");
     } else {
       setLoginModalVisible(true); // 显示登录Modal而非导航到登录页面
     }

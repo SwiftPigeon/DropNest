@@ -1,4 +1,4 @@
-// mocks/handlers.js - MSW request handlers for DropNest API
+// mocks/handlers.js - MSW request handlers for DropNest API (Updated)
 import { http, HttpResponse } from "msw";
 import {
   mockUsers,
@@ -10,7 +10,6 @@ import {
   deliveryTypes,
   speedOptions,
   generateJWTToken,
-  generateRefreshToken,
   generateOrderId,
   generateTrackingNumber,
   calculatePrice,
@@ -68,12 +67,11 @@ export const handlers = [
     // Add to mock users (in real app, this would be saved to database)
     mockUsers.push({ ...newUser, password });
 
-    // Return user data with tokens
+    // Return user data with token only (no refresh token)
     return HttpResponse.json(
       {
         ...newUser,
         token: generateJWTToken(),
-        refreshToken: generateRefreshToken(),
       },
       { status: 201 }
     );
@@ -95,36 +93,11 @@ export const handlers = [
       );
     }
 
-    // Return user data without password
+    // Return user data without password and refresh token
     const { password: _, ...userWithoutPassword } = user;
     return HttpResponse.json({
       ...userWithoutPassword,
       token: generateJWTToken(),
-      refreshToken: generateRefreshToken(),
-    });
-  }),
-
-  // POST /api/auth/refresh
-  http.post(`${API_BASE}/api/auth/refresh`, async ({ request }) => {
-    const body = await request.json();
-    const { refreshToken } = body;
-
-    if (!refreshToken) {
-      return HttpResponse.json(
-        { message: "Refresh token is required" },
-        { status: 400 }
-      );
-    }
-
-    // In real app, validate refresh token
-    // For mock, just return new tokens
-    const user = mockUsers[0]; // Return first user for simplicity
-    const { password: _, ...userWithoutPassword } = user;
-
-    return HttpResponse.json({
-      ...userWithoutPassword,
-      token: generateJWTToken(),
-      refreshToken: generateRefreshToken(),
     });
   }),
 
@@ -237,6 +210,7 @@ export const handlers = [
       addressId: `addr-${Date.now()}`,
       userId: user.userId,
       ...body,
+      // No isDefault field
     };
 
     mockAddresses.push(newAddress);
@@ -312,7 +286,7 @@ export const handlers = [
     const body = await request.json();
 
     try {
-      const priceCalculation = calculatePrice(body);
+      const priceCalculation = calculatePrice(body, user.userId);
       return HttpResponse.json(priceCalculation);
     } catch (error) {
       return HttpResponse.json({ message: error.message }, { status: 400 });
@@ -332,7 +306,7 @@ export const handlers = [
     const body = await request.json();
 
     try {
-      const priceCalculation = calculatePrice(body);
+      const priceCalculation = calculatePrice(body, user.userId);
       const orderId = generateOrderId();
       const trackingNumber = generateTrackingNumber();
 
@@ -368,6 +342,8 @@ export const handlers = [
           paymentAmount: priceCalculation.totalPrice,
           paymentDeadline: newOrder.paymentDeadline,
           trackingNumber,
+          pickupAddress: priceCalculation.pickupAddress,
+          deliveryAddress: priceCalculation.deliveryAddress,
           assignedStation: priceCalculation.assignedStation,
         },
         { status: 201 }
@@ -403,8 +379,19 @@ export const handlers = [
     const endIndex = startIndex + limit;
     const paginatedOrders = userOrders.slice(startIndex, endIndex);
 
+    const ordersWithReviewStatus = paginatedOrders.map((order) => {
+      const hasReview = mockReviews.some(
+        (review) =>
+          review.orderId === order.orderId && review.userId === user.userId
+      );
+      return {
+        ...order,
+        reviewed: hasReview,
+      };
+    });
+
     return HttpResponse.json({
-      orders: paginatedOrders,
+      orders: ordersWithReviewStatus, // 替换原来的 paginatedOrders
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(userOrders.length / limit),
@@ -568,14 +555,16 @@ export const handlers = [
           longitude: order.assignedStation.longitude || -122.4194,
         },
         pickup: {
-          address: order.pickupAddress.address,
-          latitude: order.pickupAddress.latitude,
-          longitude: order.pickupAddress.longitude,
+          addressId: order.pickupAddressId,
+          address: order.pickupAddress?.address || "456 Mission St",
+          latitude: order.pickupAddress?.latitude || 37.7751,
+          longitude: order.pickupAddress?.longitude || -122.4193,
         },
         delivery: {
-          address: order.deliveryAddress.address,
-          latitude: order.deliveryAddress.latitude || 37.7749,
-          longitude: order.deliveryAddress.longitude || -122.4194,
+          addressId: order.deliveryAddressId,
+          address: order.deliveryAddress?.address || "123 Market St",
+          latitude: order.deliveryAddress?.latitude || 37.7749,
+          longitude: order.deliveryAddress?.longitude || -122.4194,
         },
         currentSegment:
           order.status === "PICKING_UP"

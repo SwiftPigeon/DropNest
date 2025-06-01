@@ -1,18 +1,3 @@
-// import { Route, Routes } from "react-router-dom";
-// import HomePage from "./pages/HomePage";
-// import DeliveryPage from "./pages/DeliveryPage";
-
-// export default function AppRoute({ user, setUser }) {
-//   return (
-//     <Routes>
-//       <Route path="/" element={<HomePage user={user} setUser={setUser} />} />
-//       <Route
-//         path="/createDelivery"
-//         element={<DeliveryPage user={user} setUser={setUser} />}
-//       />
-//     </Routes>
-//   );
-// }
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Spin } from "antd";
@@ -21,6 +6,8 @@ import { useAuth } from "./context/AuthContext";
 // Import page components
 import HomePage from "./pages/HomePage";
 import DeliveryPage from "./pages/DeliveryPage";
+import AddressPage from "./pages/AddressPage";
+import HistoryPage from "./pages/HistoryPage";
 // import LoginPage from "./pages/LoginPage";
 // import RegisterPage from "./pages/RegisterPage";
 // import ProfilePage from "./pages/ProfilePage";
@@ -33,7 +20,7 @@ import DeliveryPage from "./pages/DeliveryPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
 
   if (loading) {
     return (
@@ -50,7 +37,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  return currentUser ? children : <Navigate to="/login" replace />;
 };
 
 export default function AppRoute() {
@@ -58,34 +45,33 @@ export default function AppRoute() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
-      {/* <Route path="/login" element={<LoginPage />} /> */}
-      {/* <Route path="/register" element={<RegisterPage />} /> */}
 
       {/* Protected Routes */}
-      {/* <Route
-        path="/createDelivery"
+      <Route
+        path="/create"
         element={
           <ProtectedRoute>
             <DeliveryPage />
           </ProtectedRoute>
         }
-      /> */}
-      {/* <Route
-        path="/profile"
+      />
+      <Route
+        path="/address"
         element={
           <ProtectedRoute>
-            <ProfilePage />
+            <AddressPage />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/addresses"
+        path="/history"
         element={
           <ProtectedRoute>
-            <AddressesPage />
+            <HistoryPage />
           </ProtectedRoute>
         }
       />
+      {/* 
       <Route
         path="/orders"
         element={
