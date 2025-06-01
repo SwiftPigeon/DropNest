@@ -76,18 +76,18 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
     }
   }, [orderId]);
 
-  // useEffect(() => {
-  //   if (visible && orderId) {
-  //     fetchInitialData();
-  //   } else {
-  //     // Reset state when modal is not visible or orderId changes
-  //     setOrderDetails(null);
-  //     setTrackingData(null);
-  //     setCurrentDeviceLocation(null);
-  //     setLoading(true);
-  //     setError(null);
-  //   }
-  // }, [visible, orderId, fetchInitialData]);
+  useEffect(() => {
+    if (visible && orderId) {
+      fetchInitialData();
+    } else {
+      // Reset state when modal is not visible or orderId changes
+      setOrderDetails(null);
+      setTrackingData(null);
+      setCurrentDeviceLocation(null);
+      setLoading(true);
+      setError(null);
+    }
+  }, [visible, orderId, fetchInitialData]);
 
   // useEffect(() => {
   //   if (
@@ -158,24 +158,29 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
   //   };
   // }, [visible, orderId, token, orderDetails]); // Re-run if orderDetails changes (e.g. status)
 
-  const trackerId = mockTrackingService.startTracking(
-    orderId,
-    trackingData.route,
-    currentDeviceLocation,
-    (newLocation) => {
-      setCurrentDeviceLocation(newLocation);
-    },
-    (newStatus) => {
-      setOrderDetails((prev) => ({ ...prev, status: newStatus }));
-    }
-  );
-
-  // 清理时停止追踪
   useEffect(() => {
-    return () => {
-      mockTrackingService.stopTracking(orderId);
-    };
-  }, [orderId]);
+    if (!visible || !orderId || !trackingData?.route || !orderDetails) {
+      return;
+    }
+
+    if (["PICKING_UP", "DELIVERING"].includes(orderDetails.status)) {
+      mockTrackingService.startTracking(
+        orderId,
+        trackingData.route,
+        currentDeviceLocation,
+        (newLocation) => {
+          setCurrentDeviceLocation(newLocation);
+        },
+        (newStatus) => {
+          setOrderDetails((prev) => ({ ...prev, status: newStatus }));
+        }
+      );
+
+      return () => {
+        mockTrackingService.stopTracking(orderId);
+      };
+    }
+  }, [visible, orderId, trackingData, currentDeviceLocation, orderDetails]);
 
   const handleCancel = () => {
     if (wsInstance) {

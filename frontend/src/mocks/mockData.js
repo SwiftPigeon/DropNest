@@ -243,6 +243,8 @@ export const mockOrders = [
       stationId: "station-2",
       name: "SkyHub North",
       address: "456 Market St, San Francisco",
+      latitude: 37.7949,
+      longitude: -122.3994,
     },
   },
 
@@ -429,6 +431,8 @@ export const mockOrders = [
       stationId: "station-3",
       name: "SkyHub South",
       address: "123 3rd St, San Francisco",
+      latitude: 37.7649,
+      longitude: -122.4294,
     },
   },
 ];
