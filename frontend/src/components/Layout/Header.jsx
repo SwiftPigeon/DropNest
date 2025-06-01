@@ -70,7 +70,10 @@ const AppHeader = ({
   ];
 
   const LogoAndTitle = ({ titleColorClass = "!text-neutral-800" }) => (
-    <div className="flex items-center">
+    <div
+      className="flex items-center cursor-pointer"
+      onClick={() => navigate("/")}
+    >
       <img
         src="../images/SwiftPigeonLogo.png"
         alt="DropNest Logo"
@@ -104,7 +107,9 @@ const AppHeader = ({
                 mode="horizontal"
                 items={authMenuItems.map((item) => ({
                   key: item.key,
-                  label: item.label,
+                  label: (
+                    <span className="text-base font-medium">{item.label}</span>
+                  ),
                   className: "hover:!bg-blue-700",
                   onClick: () => navigate(item.path),
                 }))}
@@ -131,7 +136,8 @@ const AppHeader = ({
                 <Space className="text-white hover:text-blue-300 transition-colors duration-300">
                   <Avatar
                     style={{
-                      backgroundColor: "#1890ff",
+                      backgroundColor: "#f1f5f9", // 米白色背景
+                      color: "#2563eb", // 蓝色文字
                       verticalAlign: "middle",
                     }}
                     size="default"

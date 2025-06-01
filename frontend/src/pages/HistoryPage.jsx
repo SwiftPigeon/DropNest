@@ -29,6 +29,8 @@ import {
   EnvironmentOutlined,
   DollarCircleOutlined,
   CalendarOutlined,
+  RobotOutlined,
+  RocketOutlined,
 } from "@ant-design/icons";
 import { getOrders, getOrderReview, submitOrderReview } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -178,20 +180,16 @@ const HistoryPage = () => {
   const getDeliveryTypeIcon = (type) => {
     if (type === "DRONE")
       return (
-        <img
-          src="/images/drone_icon.svg"
-          alt="Drone"
-          style={{ width: 20, height: 20, marginRight: 8 }}
-          onError={(e) => (e.target.style.display = "none")}
+        <RocketOutlined
+          className="mr-2 text-blue-500"
+          style={{ fontSize: "18px" }}
         />
       );
     if (type === "ROBOT")
       return (
-        <img
-          src="/images/robot_icon.svg"
-          alt="Robot"
-          style={{ width: 20, height: 20, marginRight: 8 }}
-          onError={(e) => (e.target.style.display = "none")}
+        <RobotOutlined
+          className="mr-2 text-blue-500"
+          style={{ fontSize: "18px" }}
         />
       );
     return <FileTextOutlined className="mr-2" />;
@@ -249,7 +247,7 @@ const HistoryPage = () => {
                       title={
                         <div className="flex items-center">
                           {getDeliveryTypeIcon(order.deliveryType)}
-                          <Text strong className="text-base md:text-lg">
+                          <Text strong className="text-sm md:text-base">
                             Order ID: {order.orderId}
                           </Text>
                         </div>
