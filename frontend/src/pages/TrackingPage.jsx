@@ -12,6 +12,7 @@ import {
   Descriptions,
   Space,
   message,
+  // Modal, // Modal is now handled by TrackingModal
 } from "antd";
 import {
   CarryOutOutlined, // Page title icon
@@ -26,6 +27,7 @@ import {
 import { getOrders } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import AppHeader from "../components/Layout/Header";
+import TrackingModal from "../components/Tracking/TrackingModal"; // Added import
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -44,7 +46,11 @@ const TrackingPage = () => {
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0); // This will be total of ALL user orders from API
+  const [totalOrders, setTotalOrders] = useState(0);
+
+  // State for TrackingModal
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [isTrackingModalVisible, setIsTrackingModalVisible] = useState(false);
 
   const formatOrderDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -69,16 +75,16 @@ const TrackingPage = () => {
       setLoading(true);
       try {
         // Fetch a page of all orders (status: null) and then filter client-side
-        const response = await getOrders(page, ITEMS_PER_PAGE, null);
+        // To truly only fetch active orders, the API would need to support multiple status query params
+        // e.g. /api/orders?status=PAID&status=PREPARING... or status=ACTIVE_GROUP
+        // For now, we fetch a page and filter.
+        const response = await getOrders(page, ITEMS_PER_PAGE, null); // Fetch all statuses for the page
         if (response && response.orders) {
           const activeOrders = response.orders.filter((order) =>
             ACTIVE_ORDER_STATUSES.includes(order.status)
           );
           setOrders(activeOrders);
-          // The API's totalOrders will be for all statuses if status=null is passed.
-          // Pagination will reflect navigating through all user's orders,
-          // but only active ones will be displayed on the current page.
-          setTotalOrders(response.totalOrders || 0);
+          setTotalOrders(response.totalOrders || 0); // Total orders across all statuses
         } else {
           setOrders([]);
           setTotalOrders(0);
@@ -102,12 +108,15 @@ const TrackingPage = () => {
   }, [fetchActiveOrders, currentPage]);
 
   const handleOpenTrackingModal = (order) => {
-    // Placeholder for opening a real tracking modal
-    console.log("Tracking order:", order);
-    message.info(
-      `Tracking for Order ID: ${order.orderId} (Details in console)`
-    );
-    // Example: setIsTrackingModalVisible(true); setSelectedOrderForTracking(order);
+    setSelectedOrderId(order.orderId);
+    setIsTrackingModalVisible(true);
+  };
+
+  const handleCloseTrackingModal = () => {
+    setIsTrackingModalVisible(false);
+    setSelectedOrderId(null); // Clear selected order ID
+    // Optionally, refresh active orders if modal interaction could change status
+    // fetchActiveOrders(currentPage);
   };
 
   const handlePageChange = (page) => {
@@ -138,7 +147,7 @@ const TrackingPage = () => {
       }
     } else if (status === "COMPLETED") color = "success";
     else if (status === "CANCELLED") color = "error";
-    else if (status === "DELIVERED") color = "success"; // Or 'blue' if preferred based on HistoryPage style for non-completed confirmed
+    else if (status === "DELIVERED") color = "success";
     return <Tag color={color}>{status.replace("_", " ").toUpperCase()}</Tag>;
   };
 
@@ -153,7 +162,7 @@ const TrackingPage = () => {
     if (type === "ROBOT")
       return (
         <RobotOutlined
-          className="mr-2 text-green-500" // Different color for variety
+          className="mr-2 text-green-500"
           style={{ fontSize: "18px" }}
         />
       );
@@ -173,7 +182,7 @@ const TrackingPage = () => {
             Track Your Active Orders
           </Title>
 
-          {loading && orders.length === 0 ? (
+          {loading && orders.length === 0 && currentPage === 1 ? ( // Show main loading only on first load/page
             <div className="text-center py-10">
               <Spin size="large" />
               <Paragraph className="mt-4 text-gray-600">
@@ -184,7 +193,6 @@ const TrackingPage = () => {
             orders.length === 0 &&
             totalOrders > 0 &&
             currentPage > 1 ? (
-            // This case handles when current page (of all orders) has no active orders
             <div className="text-center py-10">
               <Empty description="No active orders found on this page. Try previous pages or check history.">
                 <Button
@@ -209,6 +217,12 @@ const TrackingPage = () => {
             </div>
           ) : (
             <>
+              {/* Show a smaller spinner for subsequent page loads if orders are already present */}
+              {loading && orders.length > 0 && (
+                <div className="text-center mb-4">
+                  <Spin tip="Loading more orders..." />
+                </div>
+              )}
               <List
                 grid={{
                   gutter: 24,
@@ -219,7 +233,7 @@ const TrackingPage = () => {
                   xl: 3,
                   xxl: 3,
                 }}
-                dataSource={orders} // Already filtered active orders for the current API page
+                dataSource={orders}
                 renderItem={(order) => (
                   <List.Item>
                     <Card
@@ -249,7 +263,6 @@ const TrackingPage = () => {
                             </>
                           }
                         >
-                          {/* Assuming order.createdAt exists, or fallback to first statusHistory entry */}
                           {formatOrderDate(
                             order.createdAt || order.statusHistory?.[0]?.time
                           )}
@@ -294,20 +307,30 @@ const TrackingPage = () => {
                           icon={<AimOutlined />}
                           onClick={() => handleOpenTrackingModal(order)}
                           className="text-blue-500 border-blue-500 hover:!text-blue-600 hover:!border-blue-600"
+                          // Disable if status is not suitable for tracking
+                          disabled={
+                            !["PICKING_UP", "DELIVERING"].includes(
+                              order.status
+                            ) &&
+                            order.status !== "PREPARING" &&
+                            order.status !== "PAID"
+                          }
                         >
-                          Track Order
+                          {/* Change button text based on status */}
+                          {["PICKING_UP", "DELIVERING"].includes(order.status)
+                            ? "Track Live"
+                            : "View Progress"}
                         </Button>
                       </div>
                     </Card>
                   </List.Item>
                 )}
               />
-              {/* Pagination total is based on ALL user orders. A page might display < ITEMS_PER_PAGE of active orders. */}
               {totalOrders > ITEMS_PER_PAGE && (
                 <Pagination
                   current={currentPage}
-                  pageSize={ITEMS_PER_PAGE} // API page size
-                  total={totalOrders} // Total of ALL orders from API
+                  pageSize={ITEMS_PER_PAGE}
+                  total={totalOrders}
                   onChange={handlePageChange}
                   className="text-center mt-8"
                   showSizeChanger={false}
@@ -317,21 +340,13 @@ const TrackingPage = () => {
           )}
         </div>
 
-        {/* 
-          Future TrackingModal:
-          <Modal
-            title="Real-time Order Tracking"
+        {isTrackingModalVisible && selectedOrderId && (
+          <TrackingModal
             visible={isTrackingModalVisible}
-            onCancel={() => setIsTrackingModalVisible(false)}
-            footer={[<Button key="close" onClick={() => setIsTrackingModalVisible(false)}>Close</Button>]}
-            width={800} // Or dynamic
-          >
-            {selectedOrderForTracking && (
-              <p>Tracking details for Order ID: {selectedOrderForTracking.orderId}</p>
-              // Map component and tracking info would go here
-            )}
-          </Modal>
-        */}
+            onCancel={handleCloseTrackingModal}
+            orderId={selectedOrderId}
+          />
+        )}
       </Content>
     </Layout>
   );
