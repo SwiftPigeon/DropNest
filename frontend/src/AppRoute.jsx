@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import DeliveryPage from "./pages/DeliveryPage";
 import AddressPage from "./pages/AddressPage";
 import HistoryPage from "./pages/HistoryPage";
+import TrackingPage from "./pages/TrackingPage";
 // import LoginPage from "./pages/LoginPage";
 // import RegisterPage from "./pages/RegisterPage";
 // import ProfilePage from "./pages/ProfilePage";
@@ -71,16 +72,15 @@ export default function AppRoute() {
           </ProtectedRoute>
         }
       />
-      {/* 
       <Route
-        path="/orders"
+        path="/tracking"
         element={
           <ProtectedRoute>
-            <OrdersPage />
+            <TrackingPage />
           </ProtectedRoute>
         }
       />
-      <Route
+      {/* <Route
         path="/orders/:orderId"
         element={
           <ProtectedRoute>

@@ -173,7 +173,10 @@ const AppHeader = ({
               mode="horizontal"
               items={unauthMenuItems.map((item) => ({
                 key: item.key,
-                label: item.label,
+                // label: item.label,
+                label: (
+                  <span className="text-base font-medium">{item.label}</span>
+                ),
                 className: `${
                   menuTheme === "dark"
                     ? "hover:!bg-blue-700"

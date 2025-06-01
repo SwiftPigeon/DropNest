@@ -121,7 +121,7 @@ const LoginModal = ({ visible, onCancel, onSwitchToRegister }) => {
       </div>
 
       {/* 测试提示 */}
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+      {/* <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
         <Text type="secondary">
           <strong>Test Account:</strong>
           <br />
@@ -129,7 +129,7 @@ const LoginModal = ({ visible, onCancel, onSwitchToRegister }) => {
           <br />
           Password: password123
         </Text>
-      </div>
+      </div> */}
     </Modal>
   );
 };
