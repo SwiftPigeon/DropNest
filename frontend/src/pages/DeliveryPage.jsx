@@ -20,16 +20,16 @@ import {
   Card,
   Col,
   Row,
-  Space,
+  Space, // Unused, but could be useful later. Keeping for now.
   Spin,
   Alert,
   Select,
   Empty,
 } from "antd";
 import {
-  EnvironmentOutlined,
-  LoadingOutlined,
-  InboxOutlined,
+  // EnvironmentOutlined, // Not used
+  // LoadingOutlined, // Not used
+  // InboxOutlined, // Not used
   ClockCircleOutlined,
   DollarCircleOutlined,
   HomeOutlined,
@@ -53,7 +53,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "";
-const GOOGLE_MAP_LIBRARIES = ["places"];
+const GOOGLE_MAP_LIBRARIES = ["places"]; // "directions" is not strictly needed here if API key has Directions API enabled
 
 const SF_CENTER = {
   lat: 37.7749,
@@ -69,7 +69,7 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
   const [addresses, setAddresses] = useState([]);
   const [deliveryTypes, setDeliveryTypes] = useState([]);
   const [speedOptions, setSpeedOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Used for all initial data loading
 
   // Selection states
   const [selectedPickupAddress, setSelectedPickupAddress] = useState(null);
@@ -125,6 +125,10 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
 
     if (!window.google?.maps?.DirectionsService) {
       console.error("Google Maps DirectionsService not available.");
+      // It might be good to show a message to the user here as well
+      message.error(
+        "Map routing service is not available. Please try refreshing."
+      );
       return;
     }
 
@@ -145,6 +149,7 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
       isNaN(deliveryCoords.lng)
     ) {
       console.error("Invalid coordinates in selected addresses");
+      message.error("Invalid address coordinates for routing.");
       return;
     }
 
@@ -194,11 +199,28 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
   };
 
   const handleCalculateQuote = async (values) => {
+    console.log("[DEBUG] handleCalculateQuote triggered. Form values:", values); // Log 1
+    console.log("[DEBUG] selectedPickupAddress:", selectedPickupAddress); // Log 2
+    console.log("[DEBUG] selectedDeliveryAddress:", selectedDeliveryAddress); // Log 3
+
+    if (!selectedPickupAddress || !selectedDeliveryAddress) {
+      message.error(
+        "Pickup or Delivery address is missing. Please select addresses in Step 1."
+      );
+      console.error(
+        "[DEBUG] Error: Pickup or Delivery address is missing in handleCalculateQuote."
+      );
+      setCurrentStep(0); // Guide user back to address selection
+      return;
+    }
+
     setProcessing(true);
+    console.log("[DEBUG] setProcessing(true)"); // Log 4
+
     try {
       const payload = {
-        pickupAddressId: selectedPickupAddress.addressId,
-        deliveryAddressId: selectedDeliveryAddress.addressId,
+        pickupAddressId: selectedPickupAddress.addressId, // Potential error if selectedPickupAddress is null
+        deliveryAddressId: selectedDeliveryAddress.addressId, // Potential error if selectedDeliveryAddress is null
         items: [
           {
             name: values.itemName,
@@ -209,20 +231,56 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
         ],
         deliveryType: values.deliveryType,
         speed: values.speed,
+        requireSignature: values.requireSignature || false,
+        notes: values.notes || "",
       };
+      console.log("[DEBUG] Payload for calculateOrderPrice:", payload); // Log 5
 
       const response = await calculateOrderPrice(payload);
+      console.log("[DEBUG] Response from calculateOrderPrice:", response); // Log 6
+
+      // Add a check for a valid response structure
+      if (!response || typeof response.totalPrice === "undefined") {
+        console.error(
+          "[DEBUG] Invalid or empty response from calculateOrderPrice API:",
+          response
+        );
+        message.error(
+          "Failed to calculate quote: Received an invalid response from the server. Please try again."
+        );
+        // Set processing to false here as we are returning early
+        setProcessing(false); // Important: ensure processing is reset
+        return;
+      }
+
       setQuote({ ...response, packageDetails: values });
+      console.log("[DEBUG] Quote set successfully."); // Log 7
       setCurrentStep(2);
+      console.log("[DEBUG] setCurrentStep(2) called."); // Log 8
       message.success("Quote calculated!");
     } catch (error) {
-      message.error("Failed to calculate quote: " + error.message);
+      console.error(
+        "[DEBUG] Error in handleCalculateQuote catch block:",
+        error
+      ); // Log 9
+      message.error(
+        "Failed to calculate quote: " +
+          (error.response?.data?.message ||
+            error.message ||
+            "An unknown error occurred. Check console.")
+      );
     } finally {
       setProcessing(false);
+      console.log("[DEBUG] setProcessing(false) in finally block."); // Log 10
     }
   };
 
   const handlePlaceOrderAndPay = async () => {
+    if (!quote || !quote.packageDetails) {
+      message.error("Quote details are missing. Please calculate quote again.");
+      setCurrentStep(1); // Go back to package details or quote calculation
+      return;
+    }
     setProcessing(true);
     try {
       // Step 1: Create Order
@@ -254,7 +312,9 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
         `Order created and paid! Tracking: ${orderResponse.trackingNumber}`
       );
     } catch (error) {
-      message.error("Failed to process order: " + error.message);
+      message.error(
+        "Failed to process order: " + (error.message || "Unknown error")
+      );
     } finally {
       setProcessing(false);
     }
@@ -269,6 +329,7 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
   };
 
   const getAddressDisplay = (address) => {
+    if (!address) return "N/A";
     return `${address.address}, ${address.city}, ${address.zipCode}`;
   };
 
@@ -281,7 +342,12 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
           setAuthVisible={setAuthVisible}
         />
         <Content className="mt-[64px] px-4 py-8 flex justify-center items-center">
-          <Alert message="Map loading failed" type="error" />
+          <Alert
+            message="Map loading failed"
+            description="Google Maps could not be loaded. Please check your internet connection and API key."
+            type="error"
+            showIcon
+          />
         </Content>
       </Layout>
     );
@@ -303,9 +369,10 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
               {loading ? (
                 <div className="text-center py-8">
                   <Spin size="large" />
+                  <Paragraph className="mt-2">Loading addresses...</Paragraph>
                 </div>
               ) : addresses.length === 0 ? (
-                <Empty description="No saved addresses. Please add addresses first." />
+                <Empty description="No saved addresses. Please add addresses in your profile first." />
               ) : (
                 <div className="space-y-6">
                   <div>
@@ -319,12 +386,21 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
                       value={selectedPickupAddress?.addressId}
                       onChange={(value) => handleAddressSelect(value, "pickup")}
                       optionLabelProp="label"
+                      showSearch
+                      filterOption={(input, option) =>
+                        option.label
+                          .toLowerCase()
+                          .includes(input.toLowerCase()) ||
+                        option.children.props.children[1].props.children[1].props.children
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
                     >
                       {addresses.map((addr) => (
                         <Option
                           key={addr.addressId}
                           value={addr.addressId}
-                          label={`${addr.label} - ${addr.address}`}
+                          label={`${addr.label} - ${getAddressDisplay(addr)}`} // For search and display in input
                           disabled={
                             addr.addressId ===
                             selectedDeliveryAddress?.addressId
@@ -362,12 +438,21 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
                         handleAddressSelect(value, "delivery")
                       }
                       optionLabelProp="label"
+                      showSearch
+                      filterOption={(input, option) =>
+                        option.label
+                          .toLowerCase()
+                          .includes(input.toLowerCase()) ||
+                        option.children.props.children[1].props.children[1].props.children
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
                     >
                       {addresses.map((addr) => (
                         <Option
                           key={addr.addressId}
                           value={addr.addressId}
-                          label={`${addr.label} - ${addr.address}`}
+                          label={`${addr.label} - ${getAddressDisplay(addr)}`} // For search and display in input
                           disabled={
                             addr.addressId === selectedPickupAddress?.addressId
                           }
@@ -426,32 +511,44 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
                     zoomControl: true,
                   }}
                 >
-                  {selectedPickupAddress && (
-                    <Marker
-                      position={{
-                        lat: parseFloat(selectedPickupAddress.latitude),
-                        lng: parseFloat(selectedPickupAddress.longitude),
-                      }}
-                      label={{ text: "P", color: "white", fontWeight: "bold" }}
-                      icon={{
-                        url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-                      }}
-                      title={`Pickup: ${selectedPickupAddress.label}`}
-                    />
-                  )}
-                  {selectedDeliveryAddress && (
-                    <Marker
-                      position={{
-                        lat: parseFloat(selectedDeliveryAddress.latitude),
-                        lng: parseFloat(selectedDeliveryAddress.longitude),
-                      }}
-                      label={{ text: "D", color: "white", fontWeight: "bold" }}
-                      icon={{
-                        url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                      }}
-                      title={`Delivery: ${selectedDeliveryAddress.label}`}
-                    />
-                  )}
+                  {selectedPickupAddress &&
+                    selectedPickupAddress.latitude &&
+                    selectedPickupAddress.longitude && (
+                      <Marker
+                        position={{
+                          lat: parseFloat(selectedPickupAddress.latitude),
+                          lng: parseFloat(selectedPickupAddress.longitude),
+                        }}
+                        label={{
+                          text: "P",
+                          color: "white",
+                          fontWeight: "bold",
+                        }}
+                        icon={{
+                          url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+                        }}
+                        title={`Pickup: ${selectedPickupAddress.label}`}
+                      />
+                    )}
+                  {selectedDeliveryAddress &&
+                    selectedDeliveryAddress.latitude &&
+                    selectedDeliveryAddress.longitude && (
+                      <Marker
+                        position={{
+                          lat: parseFloat(selectedDeliveryAddress.latitude),
+                          lng: parseFloat(selectedDeliveryAddress.longitude),
+                        }}
+                        label={{
+                          text: "D",
+                          color: "white",
+                          fontWeight: "bold",
+                        }}
+                        icon={{
+                          url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                        }}
+                        title={`Delivery: ${selectedDeliveryAddress.label}`}
+                      />
+                    )}
                   {routeResult && (
                     <DirectionsRenderer
                       directions={routeResult}
@@ -479,180 +576,277 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
       case 1: // Package Details
         return (
           <Card title="Package & Delivery Preferences" className="shadow-lg">
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={handleCalculateQuote}
-              initialValues={{
-                quantity: 1,
-                deliveryType: deliveryTypes[0]?.type,
-                speed:
-                  speedOptions.find((s) => s.type === "STANDARD")?.type ||
-                  speedOptions[0]?.type,
-                requireSignature: false,
-              }}
-            >
-              {/* Item details in a more balanced layout */}
-              <Row gutter={16}>
-                <Col xs={24}>
-                  <Form.Item
-                    name="itemName"
-                    label="Item Name"
-                    rules={[{ required: true }]}
-                  >
-                    <Input
-                      placeholder="e.g., Documents, Small Box, Electronics"
-                      size="large"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="quantity"
-                    label="Quantity"
-                    rules={[{ required: true }]}
-                  >
-                    <InputNumber min={1} className="w-full" size="large" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="weight"
-                    label="Weight (kg)"
-                    rules={[{ required: true }]}
-                  >
-                    <InputNumber
-                      min={0.1}
-                      step={0.1}
-                      className="w-full"
-                      size="large"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="volume"
-                    label="Volume (L)"
-                    rules={[{ required: true }]}
-                  >
-                    <InputNumber
-                      min={0.1}
-                      step={0.1}
-                      className="w-full"
-                      size="large"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item
-                name="deliveryType"
-                label="Delivery Type"
-                rules={[{ required: true }]}
+            {/* FIX: Changed configLoading to loading */}
+            {loading ? (
+              <div className="text-center py-10">
+                <Spin size="large" />
+                <Paragraph className="mt-4">
+                  Loading delivery options...
+                </Paragraph>
+              </div>
+            ) : (
+              <Form
+                form={form}
+                layout="vertical"
+                onFinish={handleCalculateQuote}
+                initialValues={{
+                  quantity: 1,
+                  deliveryType: deliveryTypes[0]?.type,
+                  speed:
+                    speedOptions.find((s) => s.type === "STANDARD")?.type ||
+                    speedOptions[0]?.type,
+                  requireSignature: false,
+                }}
               >
-                <Radio.Group>
-                  {deliveryTypes.map((dt) => (
-                    <Radio key={dt.type} value={dt.type}>
-                      <div>
-                        <strong>{dt.name}</strong>
-                        <div className="text-sm text-gray-500">
-                          Max {dt.maxWeight}kg, Base ${dt.basePrice}
-                        </div>
-                      </div>
-                    </Radio>
-                  ))}
-                </Radio.Group>
-              </Form.Item>
-
-              <Form.Item
-                name="speed"
-                label="Delivery Speed"
-                rules={[{ required: true }]}
-              >
-                <Radio.Group>
-                  {speedOptions.map((so) => (
-                    <Radio key={so.type} value={so.type}>
-                      <strong>{so.name}</strong> - {so.description}
-                    </Radio>
-                  ))}
-                </Radio.Group>
-              </Form.Item>
-
-              {/* Additional options */}
-              <Row gutter={16}>
-                <Col xs={24}>
-                  <Form.Item name="requireSignature" valuePropName="checked">
-                    <Checkbox>
-                      <span className="text-sm">
-                        Require Signature on Delivery
-                      </span>
-                    </Checkbox>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item name="notes" label="Delivery Notes (Optional)">
-                <TextArea
-                  rows={3}
-                  placeholder="Special instructions (e.g., Leave at front door, Fragile item, Building access code...)"
-                  size="large"
-                />
-              </Form.Item>
-
-              <Form.Item className="mt-8">
-                <Row justify="end" gutter={16}>
-                  <Col>
-                    <Button size="large" onClick={() => setCurrentStep(0)}>
-                      Back to Addresses
-                    </Button>
-                  </Col>
-                  <Col>
-                    <Button
-                      type="primary"
-                      size="large"
-                      htmlType="submit"
-                      loading={processing}
-                      className="bg-blue-500 hover:bg-blue-600"
+                <Row gutter={16}>
+                  <Col xs={24}>
+                    <Form.Item
+                      name="itemName"
+                      label="Item Name"
+                      rules={[
+                        { required: true, message: "Please enter item name" },
+                      ]}
                     >
-                      Calculate Quote
-                    </Button>
+                      <Input
+                        placeholder="e.g., Documents, Small Box, Electronics"
+                        size="large"
+                      />
+                    </Form.Item>
                   </Col>
                 </Row>
-              </Form.Item>
-            </Form>
+
+                <Row gutter={16}>
+                  <Col xs={24} sm={8}>
+                    <Form.Item
+                      name="quantity"
+                      label="Quantity"
+                      rules={[
+                        { required: true, message: "Please enter quantity" },
+                      ]}
+                    >
+                      <InputNumber min={1} className="w-full" size="large" />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Form.Item
+                      name="weight"
+                      label="Total Weight (kg)"
+                      rules={[
+                        { required: true, message: "Please enter weight" },
+                      ]}
+                    >
+                      <InputNumber
+                        min={0.1}
+                        step={0.1}
+                        className="w-full"
+                        size="large"
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Form.Item
+                      name="volume"
+                      label="Total Volume (L)"
+                      rules={[
+                        { required: true, message: "Please enter volume" },
+                      ]}
+                    >
+                      <InputNumber
+                        min={0.1}
+                        step={0.1}
+                        className="w-full"
+                        size="large"
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* Layout for Delivery Type and Speed side-by-side on larger screens */}
+                <Row gutter={24} className="mb-6">
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      name="deliveryType"
+                      label="Delivery Type"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Please select delivery type",
+                        },
+                      ]}
+                    >
+                      <Radio.Group className="w-full">
+                        {deliveryTypes.length > 0 ? (
+                          deliveryTypes.map((dt) => (
+                            <div
+                              key={dt.type}
+                              className="mb-3 p-3 border rounded hover:border-blue-500 transition-colors"
+                            >
+                              <Radio value={dt.type} style={{ width: "100%" }}>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="font-semibold">
+                                      {dt.name}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      Max {dt.maxWeight}kg • Base $
+                                      {dt.basePrice}
+                                    </div>
+                                  </div>
+                                </div>
+                              </Radio>
+                            </div>
+                          ))
+                        ) : (
+                          <Text type="secondary">
+                            No delivery types available.
+                          </Text>
+                        )}
+                      </Radio.Group>
+                    </Form.Item>
+                  </Col>
+
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      name="speed"
+                      label="Delivery Speed"
+                      rules={[
+                        { required: true, message: "Please select speed" },
+                      ]}
+                    >
+                      <Radio.Group className="w-full">
+                        {speedOptions.length > 0 ? (
+                          speedOptions.map((so) => (
+                            <div
+                              key={so.type}
+                              className="mb-3 p-3 border rounded hover:border-blue-500 transition-colors"
+                            >
+                              <Radio value={so.type} style={{ width: "100%" }}>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="font-semibold">
+                                      {so.name}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {so.description}
+                                    </div>
+                                  </div>
+                                  {so.priceMultiplier && (
+                                    <Text strong>${so.priceMultiplier}x</Text>
+                                  )}
+                                </div>
+                              </Radio>
+                            </div>
+                          ))
+                        ) : (
+                          <Text type="secondary">
+                            No speed options available.
+                          </Text>
+                        )}
+                      </Radio.Group>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Row gutter={16}>
+                  <Col xs={24}>
+                    <Form.Item name="requireSignature" valuePropName="checked">
+                      <Checkbox>
+                        <span className="text-sm">
+                          Require Signature on Delivery
+                        </span>
+                      </Checkbox>
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                <Form.Item name="notes" label="Delivery Notes (Optional)">
+                  <TextArea
+                    rows={3}
+                    placeholder="Special instructions (e.g., Leave at front door, Fragile item, Building access code...)"
+                    size="large"
+                  />
+                </Form.Item>
+
+                <Form.Item className="mt-8">
+                  <Row justify="end" gutter={16}>
+                    <Col>
+                      <Button size="large" onClick={() => setCurrentStep(0)}>
+                        Back to Addresses
+                      </Button>
+                    </Col>
+                    <Col>
+                      <Button
+                        type="primary"
+                        size="large"
+                        htmlType="submit"
+                        loading={processing}
+                        className="bg-blue-500 hover:bg-blue-600"
+                        disabled={
+                          deliveryTypes.length === 0 ||
+                          speedOptions.length === 0
+                        }
+                      >
+                        Calculate Quote
+                      </Button>
+                    </Col>
+                  </Row>
+                </Form.Item>
+              </Form>
+            )}
           </Card>
         );
+      // FIX: Removed the duplicate <Form> block that was here.
+      // The above <Form> within the <Card> is the correct one.
 
       case 2: // Review Quote
+        if (!quote) {
+          // Add a guard in case quote is null
+          return (
+            <Card title="Review Your Quote" className="shadow-lg">
+              <Alert
+                message="No Quote Available"
+                description="Please go back and calculate a quote first."
+                type="warning"
+                showIcon
+              />
+              <div className="mt-4 text-right">
+                <Button size="large" onClick={() => setCurrentStep(1)}>
+                  Back to Package Details
+                </Button>
+              </div>
+            </Card>
+          );
+        }
         return (
           <Card title="Review Your Quote" className="shadow-lg">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <Title level={4}>Route</Title>
-                <p>
+                <Title level={4} className="mb-2">
+                  Route
+                </Title>
+                <Paragraph>
                   <strong>From:</strong>{" "}
                   {getAddressDisplay(selectedPickupAddress)}
-                </p>
-                <p>
+                </Paragraph>
+                <Paragraph>
                   <strong>To:</strong>{" "}
                   {getAddressDisplay(selectedDeliveryAddress)}
-                </p>
+                </Paragraph>
               </div>
 
               <div>
-                <Title level={4}>Package</Title>
-                <p>
+                <Title level={4} className="mb-2">
+                  Package & Service
+                </Title>
+                <Paragraph>
                   <strong>Item:</strong> {quote.packageDetails.itemName} (×
                   {quote.packageDetails.quantity})
-                </p>
-                <p>
+                </Paragraph>
+                <Paragraph>
                   <strong>Weight:</strong> {quote.packageDetails.weight}kg,{" "}
                   <strong>Volume:</strong> {quote.packageDetails.volume}L
-                </p>
-                <p>
+                </Paragraph>
+                <Paragraph>
                   <strong>Service:</strong>{" "}
                   {
                     deliveryTypes.find(
@@ -665,33 +859,49 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
                       (st) => st.type === quote.packageDetails.speed
                     )?.name
                   }
-                </p>
+                </Paragraph>
+                {quote.packageDetails.notes && (
+                  <Paragraph>
+                    <strong>Notes:</strong> {quote.packageDetails.notes}
+                  </Paragraph>
+                )}
+                {quote.packageDetails.requireSignature && (
+                  <Paragraph>
+                    <strong>Signature Required:</strong> Yes
+                  </Paragraph>
+                )}
               </div>
 
               <div>
-                <Title level={4}>Pricing</Title>
+                <Title level={4} className="mb-2">
+                  Pricing
+                </Title>
                 <Row gutter={16}>
-                  <Col span={12}>
-                    <p>
-                      <DollarCircleOutlined />{" "}
+                  <Col xs={24} sm={12}>
+                    <Paragraph className="text-lg">
+                      <DollarCircleOutlined className="mr-2" />{" "}
                       <strong>Total: ${quote.totalPrice.toFixed(2)}</strong>
-                    </p>
-                    <p>
-                      <ClockCircleOutlined /> <strong>ETA:</strong>{" "}
-                      {quote.estimatedTime}
-                    </p>
+                    </Paragraph>
+                    <Paragraph>
+                      <ClockCircleOutlined className="mr-2" />{" "}
+                      <strong>ETA:</strong> {quote.estimatedTime}
+                    </Paragraph>
                   </Col>
-                  <Col span={12}>
-                    <div className="text-sm">
-                      <p>Base: {quote.priceBreakdown.base}</p>
-                      <p>Distance: {quote.priceBreakdown.distance}</p>
-                      <p>Speed: {quote.priceBreakdown.speed}</p>
+                  <Col xs={24} sm={12}>
+                    <Text strong>Breakdown:</Text>
+                    <div className="text-sm text-gray-600 mt-2 space-y-1">
+                      <div>Base: {quote.priceBreakdown.base || "N/A"}</div>
+                      <div>
+                        Distance: {quote.priceBreakdown.distance || "N/A"}
+                      </div>
+                      <div>Weight: {quote.priceBreakdown.weight || "N/A"}</div>
+                      <div>Speed: {quote.priceBreakdown.speed || "N/A"}</div>
                     </div>
                   </Col>
                 </Row>
               </div>
 
-              <div className="flex justify-end space-x-4 pt-4">
+              <div className="flex justify-end space-x-4 pt-4 border-t mt-6">
                 <Button size="large" onClick={() => setCurrentStep(1)}>
                   Back
                 </Button>
@@ -700,6 +910,7 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
                   size="large"
                   onClick={handlePlaceOrderAndPay}
                   loading={processing}
+                  className="bg-green-500 hover:bg-green-600"
                 >
                   Place Order & Pay ${quote.totalPrice.toFixed(2)}
                 </Button>
@@ -709,12 +920,42 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
         );
 
       case 3: // Order Confirmation
+        if (!orderDetails) {
+          // Add a guard in case orderDetails is null
+          return (
+            <Card title="Order Status" className="shadow-lg">
+              <Alert
+                message="Order Information Missing"
+                description="Something went wrong, and order confirmation details are not available. Please check your order history or contact support."
+                type="error"
+                showIcon
+              />
+              <div className="mt-6 text-center">
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={() => {
+                    setCurrentStep(0);
+                    form.resetFields();
+                    setQuote(null);
+                    setOrderDetails(null);
+                    setSelectedPickupAddress(null);
+                    setSelectedDeliveryAddress(null);
+                    setRouteResult(null);
+                  }}
+                >
+                  Create Another Order
+                </Button>
+              </div>
+            </Card>
+          );
+        }
         return (
           <Card title="Order Confirmed!" className="shadow-lg">
             <Alert
               message="Order Successfully Created & Paid!"
               description={
-                <div>
+                <div className="space-y-1">
                   <p>
                     <strong>Order ID:</strong> {orderDetails.orderId}
                   </p>
@@ -727,7 +968,7 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
                   </p>
                   <p>
                     <strong>Total Paid:</strong> $
-                    {orderDetails.paymentAmount.toFixed(2)}
+                    {orderDetails.paymentAmount?.toFixed(2) || "N/A"}
                   </p>
                 </div>
               }
@@ -738,7 +979,17 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
               <Button
                 type="primary"
                 size="large"
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  setCurrentStep(0);
+                  form.resetFields();
+                  setQuote(null);
+                  setOrderDetails(null);
+                  setSelectedPickupAddress(null);
+                  setSelectedDeliveryAddress(null);
+                  setRouteResult(null);
+                  // Optionally re-fetch initial data if needed, or rely on existing
+                  // fetchInitialData();
+                }}
               >
                 Create Another Order
               </Button>
@@ -760,17 +1011,17 @@ export default function DeliveryPage({ user, setUser, setAuthVisible }) {
       />
       <Content className="mt-[64px] px-4 py-8">
         <div className="max-w-5xl mx-auto">
-          <Title level={2} className="mb-6">
+          {" "}
+          {/* Changed from max-w-5xl for a bit more width */}
+          <Title level={2} className="mb-6 text-center">
             Create New Delivery
           </Title>
-
           <Steps current={currentStep} className="mb-8">
             <Step title="Addresses" description="Select pickup & delivery" />
             <Step title="Package" description="Item details & preferences" />
             <Step title="Quote" description="Review & confirm" />
             <Step title="Complete" description="Order confirmed" />
           </Steps>
-
           {renderStepContent()}
         </div>
       </Content>
