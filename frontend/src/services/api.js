@@ -1,4 +1,4 @@
-// utils/api.js - Low-level HTTP client configuration
+// api.js - Complete API client with HTTP utilities and service functions
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8080";
 
@@ -146,3 +146,290 @@ class HttpClient {
 
 // Create and export a default HTTP client instance
 export const httpClient = new HttpClient();
+
+// ============ API SERVICE FUNCTIONS ============
+
+// Auth API functions
+export const loginUser = async ({ email, password }) => {
+  const response = await httpClient.post(API_ENDPOINTS.LOGIN, {
+    email,
+    password,
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Login failed");
+  }
+  return response.json();
+};
+
+export const registerUser = async (userData) => {
+  const response = await httpClient.post(API_ENDPOINTS.REGISTER, userData);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Registration failed");
+  }
+  return response.json();
+};
+
+export const logoutUser = async (token) => {
+  const response = await httpClient.authenticatedRequest(API_ENDPOINTS.LOGOUT, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    console.warn(
+      "Logout API call failed, but continuing with client-side logout"
+    );
+  }
+  return response.ok;
+};
+
+export const refreshToken = async (refreshToken) => {
+  const response = await httpClient.post(API_ENDPOINTS.REFRESH, {
+    refreshToken,
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Token refresh failed");
+  }
+  return response.json();
+};
+
+// User API functions
+export const fetchUserProfile = async () => {
+  const response = await httpClient.authGet(API_ENDPOINTS.PROFILE);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch profile");
+  }
+  return response.json();
+};
+
+export const updateUserProfile = async (profileData) => {
+  const response = await httpClient.authPut(
+    API_ENDPOINTS.UPDATE_PROFILE,
+    profileData
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update profile");
+  }
+  return response.json();
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  const response = await httpClient.authPut(API_ENDPOINTS.CHANGE_PASSWORD, {
+    currentPassword,
+    newPassword,
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to change password");
+  }
+  return response.json();
+};
+
+// Address API functions
+export const getAddresses = async () => {
+  const response = await httpClient.authGet(API_ENDPOINTS.ADDRESSES);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch addresses");
+  }
+  return response.json();
+};
+
+export const addAddress = async (addressData) => {
+  const response = await httpClient.authPost(
+    API_ENDPOINTS.ADDRESSES,
+    addressData
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to add address");
+  }
+  return response.json();
+};
+
+export const updateAddress = async (addressId, addressData) => {
+  const response = await httpClient.authPut(
+    API_ENDPOINTS.ADDRESS_BY_ID(addressId),
+    addressData
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update address");
+  }
+  return response.json();
+};
+
+export const deleteAddress = async (addressId) => {
+  const response = await httpClient.authDelete(
+    API_ENDPOINTS.ADDRESS_BY_ID(addressId)
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to delete address");
+  }
+  return response.ok;
+};
+
+// Order API functions
+export const calculateOrderPrice = async (orderData) => {
+  const response = await httpClient.authPost(
+    API_ENDPOINTS.CALCULATE_PRICE,
+    orderData
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to calculate price");
+  }
+  return response.json();
+};
+
+export const createOrder = async (orderData) => {
+  const response = await httpClient.authPost(API_ENDPOINTS.ORDERS, orderData);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to create order");
+  }
+  return response.json();
+};
+
+export const getOrders = async (page = 1, limit = 10, status = null) => {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (status) queryParams.append("status", status);
+
+  const response = await httpClient.authGet(
+    `${API_ENDPOINTS.ORDERS}?${queryParams}`
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch orders");
+  }
+  return response.json();
+};
+
+export const getOrderDetails = async (orderId) => {
+  const response = await httpClient.authGet(API_ENDPOINTS.ORDER_BY_ID(orderId));
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch order details");
+  }
+  return response.json();
+};
+
+export const cancelOrder = async (orderId, reason) => {
+  const response = await httpClient.authPut(
+    API_ENDPOINTS.CANCEL_ORDER(orderId),
+    { reason }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to cancel order");
+  }
+  return response.json();
+};
+
+export const confirmDelivery = async (orderId, confirmed, signatureName) => {
+  const response = await httpClient.authPut(
+    API_ENDPOINTS.CONFIRM_DELIVERY(orderId),
+    {
+      confirmed,
+      signatureName,
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to confirm delivery");
+  }
+  return response.json();
+};
+
+// Tracking API functions
+export const getOrderTracking = async (orderId) => {
+  const response = await httpClient.authGet(
+    API_ENDPOINTS.ORDER_TRACKING(orderId)
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch tracking info");
+  }
+  return response.json();
+};
+
+// Payment API functions
+export const payOrder = async (orderId, paymentMethod) => {
+  const response = await httpClient.authPost(API_ENDPOINTS.PAY_ORDER, {
+    orderId,
+    paymentMethod,
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Payment failed");
+  }
+  return response.json();
+};
+
+export const getPaymentHistory = async (page = 1, limit = 10) => {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  const response = await httpClient.authGet(
+    `${API_ENDPOINTS.PAYMENT_HISTORY}?${queryParams}`
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch payment history");
+  }
+  return response.json();
+};
+
+// Review API functions
+export const submitOrderReview = async (orderId, rating, comment) => {
+  const response = await httpClient.authPost(
+    API_ENDPOINTS.ORDER_REVIEW(orderId),
+    {
+      rating,
+      comment,
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to submit review");
+  }
+  return response.json();
+};
+
+export const getOrderReview = async (orderId) => {
+  const response = await httpClient.authGet(
+    API_ENDPOINTS.ORDER_REVIEW(orderId)
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch review");
+  }
+  return response.json();
+};
+
+// Configuration API functions
+export const getDeliveryTypes = async () => {
+  const response = await httpClient.authGet(API_ENDPOINTS.DELIVERY_TYPES);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch delivery types");
+  }
+  return response.json();
+};
+
+export const getSpeedOptions = async () => {
+  const response = await httpClient.authGet(API_ENDPOINTS.SPEED_OPTIONS);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch speed options");
+  }
+  return response.json();
+};
