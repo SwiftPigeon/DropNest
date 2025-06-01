@@ -530,12 +530,12 @@ export const handlers = [
       return HttpResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    if (!["PICKING_UP", "DELIVERING"].includes(order.status)) {
-      return HttpResponse.json(
-        { message: "Tracking not available for this order status" },
-        { status: 400 }
-      );
-    }
+    // if (!["PICKING_UP", "DELIVERING"].includes(order.status)) {
+    //   return HttpResponse.json(
+    //     { message: "Tracking not available for this order status" },
+    //     { status: 400 }
+    //   );
+    // }
 
     return HttpResponse.json({
       orderId: order.orderId,

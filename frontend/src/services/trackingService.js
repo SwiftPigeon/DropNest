@@ -84,8 +84,9 @@ export const connectToTracking = (
       error
     );
     if (onError) {
-      onError(error); // Pass the original error event
+      onError(error); // 现有代码
     }
+    // 添加：标记连接失败，让调用方知道需要降级
   };
 
   ws.onclose = (event) => {

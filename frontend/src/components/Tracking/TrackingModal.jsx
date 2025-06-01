@@ -9,6 +9,7 @@ import {
 import { useAuth } from "../../context/AuthContext"; // To get the token
 import DeliveryMap from "./DeliveryMap";
 import OrderStatusProgress from "./OrderStatusProgress";
+import mockTrackingService from "../../services/mockTrackingService";
 
 const { Title } = Typography;
 
@@ -34,13 +35,19 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
       //    The API doc suggests /api/orders/{id}/tracking for this.
       //    This will give us route.origin, route.pickup, route.delivery, and initial deviceLocation.
       if (["PICKING_UP", "DELIVERING"].includes(details.status)) {
+        console.log("Status is active, fetching tracking...");
         const initialTracking = await getOrderTracking(orderId);
+        console.log("Initial tracking:", initialTracking);
         setTrackingData(initialTracking); // Contains route and initial deviceLocation
         setCurrentDeviceLocation(initialTracking.deviceLocation); // Set initial for map
       } else {
         // If not actively tracking, use device info from orderDetails if available, or set a placeholder
         // The `DeliveryMap` needs `route` and `deviceLocation`.
         // Construct a minimal route if possible from orderDetails for map context.
+        console.log("Status is not active, building minimal route...");
+        console.log("Assigned station:", details.assignedStation);
+        console.log("Pickup address:", details.pickupAddress);
+        console.log("Delivery address:", details.deliveryAddress);
         const minimalRoute = {
           origin: details.assignedStation
             ? {
@@ -53,6 +60,7 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
           pickup: details.pickupAddress,
           delivery: details.deliveryAddress,
         };
+        console.log("Minimal route:", minimalRoute);
         setTrackingData({
           route: minimalRoute,
           deviceLocation: details.device?.currentLocation || null, // Use from orderDetails if present
@@ -60,95 +68,114 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
         setCurrentDeviceLocation(details.device?.currentLocation || null);
       }
     } catch (err) {
-      message.error(`Failed to load order data: ${err.message}`);
-      setError(`Failed to load order data: ${err.message}. Please try again.`);
+      // message.error(`Failed to load order data: ${err.message}`);
+      // setError(`Failed to load order data: ${err.message}. Please try again.`);
       console.error("Error fetching initial data for tracking modal:", err);
     } finally {
       setLoading(false);
     }
   }, [orderId]);
 
-  useEffect(() => {
-    if (visible && orderId) {
-      fetchInitialData();
-    } else {
-      // Reset state when modal is not visible or orderId changes
-      setOrderDetails(null);
-      setTrackingData(null);
-      setCurrentDeviceLocation(null);
-      setLoading(true);
-      setError(null);
+  // useEffect(() => {
+  //   if (visible && orderId) {
+  //     fetchInitialData();
+  //   } else {
+  //     // Reset state when modal is not visible or orderId changes
+  //     setOrderDetails(null);
+  //     setTrackingData(null);
+  //     setCurrentDeviceLocation(null);
+  //     setLoading(true);
+  //     setError(null);
+  //   }
+  // }, [visible, orderId, fetchInitialData]);
+
+  // useEffect(() => {
+  //   if (
+  //     !visible ||
+  //     !orderDetails ||
+  //     !token ||
+  //     !["PICKING_UP", "DELIVERING"].includes(orderDetails.status)
+  //   ) {
+  //     // If WebSocket is active, disconnect it
+  //     if (wsInstance) {
+  //       disconnectTracking(wsInstance);
+  //       setWsInstance(null);
+  //     }
+  //     return;
+  //   }
+
+  //   // Establish WebSocket connection only if order is actively being tracked
+  //   const ws = connectToTracking(
+  //     orderId,
+  //     token,
+  //     (messageData) => {
+  //       // onMessage
+  //       // Assuming messageData is the full tracking object from WebSocket,
+  //       // or at least contains deviceLocation.
+  //       console.log("WebSocket message received:", messageData);
+  //       if (messageData.deviceLocation) {
+  //         setCurrentDeviceLocation(messageData.deviceLocation);
+  //       }
+  //       // Optionally update full tracking data if WebSocket sends more than just location
+  //       // setTrackingData(prev => ({ ...prev, ...messageData }));
+
+  //       // If WebSocket message indicates order status change (e.g., to DELIVERED)
+  //       if (messageData.status && messageData.status !== orderDetails.status) {
+  //         setOrderDetails((prev) => ({
+  //           ...prev,
+  //           status: messageData.status /* update history if sent */,
+  //         }));
+  //         if (
+  //           messageData.status === "DELIVERED" ||
+  //           messageData.status === "COMPLETED"
+  //         ) {
+  //           disconnectTracking(ws); // Disconnect if order is delivered/completed
+  //           setWsInstance(null);
+  //         }
+  //       }
+  //     },
+  //     (err) => {
+  //       // onError
+  //       message.error(`WebSocket error: ${err.message || "Connection failed"}`);
+  //       console.error("WebSocket error:", err);
+  //       setError("Real-time tracking connection failed.");
+  //     },
+  //     (closeEvent) => {
+  //       // onClose
+  //       console.log("WebSocket connection closed:", closeEvent.reason);
+  //       setWsInstance(null); // Clear instance on close
+  //       // Optionally inform user, or attempt re-fetch if appropriate (not for this simplified version)
+  //     }
+  //   );
+  //   setWsInstance(ws);
+
+  //   return () => {
+  //     // Cleanup on component unmount or when dependencies change
+  //     if (ws) {
+  //       disconnectTracking(ws);
+  //       setWsInstance(null);
+  //     }
+  //   };
+  // }, [visible, orderId, token, orderDetails]); // Re-run if orderDetails changes (e.g. status)
+
+  const trackerId = mockTrackingService.startTracking(
+    orderId,
+    trackingData.route,
+    currentDeviceLocation,
+    (newLocation) => {
+      setCurrentDeviceLocation(newLocation);
+    },
+    (newStatus) => {
+      setOrderDetails((prev) => ({ ...prev, status: newStatus }));
     }
-  }, [visible, orderId, fetchInitialData]);
+  );
 
+  // 清理时停止追踪
   useEffect(() => {
-    if (
-      !visible ||
-      !orderDetails ||
-      !token ||
-      !["PICKING_UP", "DELIVERING"].includes(orderDetails.status)
-    ) {
-      // If WebSocket is active, disconnect it
-      if (wsInstance) {
-        disconnectTracking(wsInstance);
-        setWsInstance(null);
-      }
-      return;
-    }
-
-    // Establish WebSocket connection only if order is actively being tracked
-    const ws = connectToTracking(
-      orderId,
-      token,
-      (messageData) => {
-        // onMessage
-        // Assuming messageData is the full tracking object from WebSocket,
-        // or at least contains deviceLocation.
-        console.log("WebSocket message received:", messageData);
-        if (messageData.deviceLocation) {
-          setCurrentDeviceLocation(messageData.deviceLocation);
-        }
-        // Optionally update full tracking data if WebSocket sends more than just location
-        // setTrackingData(prev => ({ ...prev, ...messageData }));
-
-        // If WebSocket message indicates order status change (e.g., to DELIVERED)
-        if (messageData.status && messageData.status !== orderDetails.status) {
-          setOrderDetails((prev) => ({
-            ...prev,
-            status: messageData.status /* update history if sent */,
-          }));
-          if (
-            messageData.status === "DELIVERED" ||
-            messageData.status === "COMPLETED"
-          ) {
-            disconnectTracking(ws); // Disconnect if order is delivered/completed
-            setWsInstance(null);
-          }
-        }
-      },
-      (err) => {
-        // onError
-        message.error(`WebSocket error: ${err.message || "Connection failed"}`);
-        console.error("WebSocket error:", err);
-        setError("Real-time tracking connection failed.");
-      },
-      (closeEvent) => {
-        // onClose
-        console.log("WebSocket connection closed:", closeEvent.reason);
-        setWsInstance(null); // Clear instance on close
-        // Optionally inform user, or attempt re-fetch if appropriate (not for this simplified version)
-      }
-    );
-    setWsInstance(ws);
-
     return () => {
-      // Cleanup on component unmount or when dependencies change
-      if (ws) {
-        disconnectTracking(ws);
-        setWsInstance(null);
-      }
+      mockTrackingService.stopTracking(orderId);
     };
-  }, [visible, orderId, token, orderDetails]); // Re-run if orderDetails changes (e.g. status)
+  }, [orderId]);
 
   const handleCancel = () => {
     if (wsInstance) {
@@ -186,17 +213,15 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
         <div className="flex items-center justify-center h-full p-6">
           <Alert message="Error" description={error} type="error" showIcon />
         </div>
-      ) : orderDetails && trackingData ? (
+      ) : orderDetails && trackingData && trackingData.route ? (
         <>
           <div
             className="flex-grow"
             style={{ minHeight: "0", flexBasis: "70%" }}
           >
-            {" "}
-            {/* Map area takes 70% */}
             <DeliveryMap
               route={trackingData.route}
-              deviceLocation={currentDeviceLocation} // Pass the live device location
+              deviceLocation={currentDeviceLocation}
               orderDetails={orderDetails}
             />
           </div>
@@ -204,8 +229,6 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
             className="p-4 border-t border-gray-200 bg-gray-50"
             style={{ flexShrink: 0, flexBasis: "30%", overflowY: "auto" }}
           >
-            {" "}
-            {/* Progress area */}
             <OrderStatusProgress
               currentStatus={orderDetails.status}
               statusHistory={orderDetails.statusHistory}
@@ -216,7 +239,7 @@ const TrackingModal = ({ visible, onCancel, orderId }) => {
         <div className="flex items-center justify-center h-full p-6">
           <Alert
             message="Information"
-            description="No tracking information available for this order or state."
+            description="Loading tracking information..."
             type="info"
             showIcon
           />
