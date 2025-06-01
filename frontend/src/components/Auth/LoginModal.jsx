@@ -13,33 +13,21 @@ const LoginModal = ({ visible, onCancel, onSwitchToRegister }) => {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      // Call your actual login API based on the Postman collection
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
-      });
+      // 使用AuthContext中的login方法，传入email和password
+      const userData = await login(values.email, values.password);
 
-      if (!response.ok) {
-        throw new Error("Login failed");
-      }
-
-      const data = await response.json();
-
-      // Call the login function from AuthContext with the API response
-      await login(data);
-
+      console.log("Login successful:", userData);
       message.success("Login successful!");
       form.resetFields();
       onCancel(); // Close the modal
+
+      // 登录成功后可以进行页面跳转等操作
+      // navigate 会在AuthContext中处理，或者你可以在这里添加
     } catch (error) {
-      message.error("Login failed. Please check your credentials.");
       console.error("Login error:", error);
+      message.error(
+        error.message || "Login failed. Please check your credentials."
+      );
     } finally {
       setLoading(false);
     }
@@ -75,6 +63,11 @@ const LoginModal = ({ visible, onCancel, onSwitchToRegister }) => {
         onFinish={handleLogin}
         layout="vertical"
         size="large"
+        // 为了测试方便，预填充测试账户信息
+        initialValues={{
+          email: "john.doe@example.com",
+          password: "password123",
+        }}
       >
         <Form.Item
           name="email"
@@ -124,6 +117,17 @@ const LoginModal = ({ visible, onCancel, onSwitchToRegister }) => {
           >
             Sign up here
           </Button>
+        </Text>
+      </div>
+
+      {/* 测试提示 */}
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+        <Text type="secondary">
+          <strong>Test Account:</strong>
+          <br />
+          Email: john.doe@example.com
+          <br />
+          Password: password123
         </Text>
       </div>
     </Modal>
